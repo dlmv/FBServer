@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="FBServer" default="help">
+  <loadproperties srcFile="local.properties" />
+  <property file="ant.properties" />
+  <loadproperties srcFile="project.properties" />
+
+  <!-- quick check on sdk.dir -->
+  <fail
+    message="sdk.dir is missing. Make sure to generate local.properties using 'android update project'"
+    unless="sdk.dir"
+  />
+
+	<target name="init" description="Initialization...">
+		<fail message="Ant 1.7.0 or higher is required. Please upgrade your ant.">
+			<condition>
+				<not>
+					<antversion property="ant.version" atleast="1.7.0"/>
+				</not>
+			</condition>
+		</fail>
+	</target>
+
+	<target name="resources" depends="init">
+		<echo message="Cleaning up the 'res/drawable' folder..." />
+		<delete dir="res/drawable/">
+			<files includes="**"/>
+		</delete>
+		<echo message="DONE (Cleaning up the 'res/drawable' folder)" />
+
+		<echo message="Copying icons files to 'res/drawable/' folder..." />
+		<copy todir="res/drawable" verbose="false" overwrite="true" flatten="true">
+			<fileset file="icons/fbreader.png" />
+			<fileset dir="icons/" includes="*/*" />
+		</copy>
+		<echo message="DONE (Copying icons files to 'res/drawable/' folder)" />
+	</target>
+
+  <target name="-pre-build" depends="init">
+  </target>
+<!--
+  <target name="-pre-compile">
+  </target>
+
+  <target name="-post-compile">
+  </target>
+-->
+	<target name="clean">
+		<echo message="Deleting temporary files..." />
+		<delete dir="gen" />
+		<delete dir="bin" />
+		<delete dir="res/drawable" />
+		<delete dir="out" />
+		<delete dir="obj" />
+		<echo message="DONE (Deleting temporary files)" />
+	</target>
+
+	<target name="distclean" depends="clean">
+		<echo message="Deleting native libraries..." />
+		<delete dir="libs/armeabi" />
+		<delete dir="libs/armeabi-v7a" />
+		<delete dir="libs/x86" />
+		<delete dir="libs/mips" />
+		<delete dir="libs/mips-r2" />
+		<delete dir="libs/mips-r2-sf" />
+		<echo message="DONE (Deleting native libraries)" />
+	</target>
+
+  <import file="${sdk.dir}/tools/ant/build.xml" />
+</project>

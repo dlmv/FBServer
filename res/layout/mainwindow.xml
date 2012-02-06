@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+>
+	<LinearLayout
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:paddingLeft="10dp"
+		android:paddingRight="10dp"
+		android:orientation="vertical"
+	>
+		<TextView
+			android:id="@+id/port_label"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:singleLine="true"
+		/>
+		<EditText
+			android:id="@+id/port"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:singleLine="true"
+			android:inputType="number"
+		/>
+		<include layout="@layout/ok_cancel_buttons" android:id="@+id/start_stop_buttons" />
+	</LinearLayout>
+</ScrollView>
