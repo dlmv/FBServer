@@ -17,7 +17,7 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbreader.server;
+package org.geometerplus.android.fbserver;
 
 import android.app.*;
 import android.content.Intent;
@@ -27,10 +27,10 @@ import android.widget.Toast;
 
 import java.io.*;
 
-import org.geometerplus.android.fbreader.server.opds.*;
+import org.geometerplus.android.fbserver.opds.*;
 
 
-public class ServerService extends Service {
+public class FBServerService extends Service {
 
 	final static String PORT = "server_port";
 	final static String RESULT = "server_result";
@@ -49,7 +49,8 @@ public class ServerService extends Service {
 			int res = msg.getData().getInt(RESULT);
 			if (res == STARTED) {
 				Toast.makeText(getApplicationContext(), "Server started on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
-				sendBroadcast(new Intent(FBReaderServerActivity.START));
+				sendBroadcast(new Intent(FBServerActivity.START));
+				showNotification();
 			}
 			if (res == FAILED) {
 				Toast.makeText(getApplicationContext(), myError, Toast.LENGTH_SHORT).show();
@@ -57,7 +58,8 @@ public class ServerService extends Service {
 			}
 			if (res == STOPPED) {
 				Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
-				sendBroadcast(new Intent(FBReaderServerActivity.STOP));
+				sendBroadcast(new Intent(FBServerActivity.STOP));
+				mNM.cancel(NOTIFICATION);
 			}
 		}
 	};
@@ -67,24 +69,24 @@ public class ServerService extends Service {
 	@Override
 	public void onCreate() {
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-		showNotification();
-		sendBroadcast(new Intent(FBReaderServerActivity.STARTING));
+		sendBroadcast(new Intent(FBServerActivity.STARTING));
 	}
 
 	@Override
 	public int onStartCommand(final Intent intent, int flags, int startId) {
-		myPort = intent.getIntExtra(PORT, 8080);
 		final Thread starter = new Thread(new Runnable() {
 			public void run () {
-				final int port = myPort;
 				try {
-					myServer = new OPDSServer(port, ServerService.this);
+					String portStr = intent.getStringExtra(PORT);
+					myPort = Integer.parseInt(portStr);
+					final int port = myPort;
+					myServer = new OPDSServer(port, FBServerService.this);
 					Message myMessage=new Message();
 					Bundle resBundle = new Bundle();
 					resBundle.putInt(RESULT, STARTED);
 					myMessage.setData(resBundle);
 					myHandler.sendMessage(myMessage);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					Message myMessage=new Message();
 					Bundle resBundle = new Bundle();
 					resBundle.putInt(RESULT, FAILED);
@@ -100,7 +102,6 @@ public class ServerService extends Service {
 
 	@Override
 	public void onDestroy() {
-		mNM.cancel(NOTIFICATION);
 		if (myServer != null) {
 			final Thread finisher = new Thread(new Runnable() {
 				public void run () {
@@ -115,7 +116,7 @@ public class ServerService extends Service {
 			finisher.start();
 		} else {
 			Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
-			sendBroadcast(new Intent(FBReaderServerActivity.STOP));
+			sendBroadcast(new Intent(FBServerActivity.STOP));
 		}
 	}
 
@@ -131,7 +132,7 @@ public class ServerService extends Service {
 		notification.flags = Notification.FLAG_ONGOING_EVENT;
 
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-				new Intent(this, FBReaderServerActivity.class), 0);
+				new Intent(this, FBServerActivity.class), 0);
 
 		notification.setLatestEventInfo(this, "fgsfds",
 					   text, contentIntent);

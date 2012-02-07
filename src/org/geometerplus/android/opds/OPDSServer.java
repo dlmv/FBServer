@@ -17,7 +17,7 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbreader.server.opds;
+package org.geometerplus.android.fbserver.opds;
 
 import java.io.*;
 import java.net.*;
@@ -48,7 +48,7 @@ public class OPDSServer extends NanoHTTPD {
 	}
 
 	private void expose() throws IOException {
-		ServiceInfo serviceInfo = ServiceInfo.create("_stanza._tcp.local.", "FBReader server", myPort, "FBreader server");
+		ServiceInfo serviceInfo = ServiceInfo.create("_stanza._tcp.local.", "FBReader server", myPort, 0, 0, "path=/stanza");
 		final WifiManager wifiManager = (WifiManager)myContext.getSystemService(Context.WIFI_SERVICE);
 		myLock = wifiManager.createMulticastLock("FBServer_lock");
 		myLock.setReferenceCounted(true);

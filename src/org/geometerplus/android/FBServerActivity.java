@@ -17,7 +17,7 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbreader.server;
+package org.geometerplus.android.fbserver;
 
 import android.app.*;
 import android.content.*;
@@ -28,7 +28,7 @@ import android.app.ProgressDialog;
 
 
 
-public class FBReaderServerActivity extends Activity {
+public class FBServerActivity extends Activity {
 
 	private Button myStartButton;
 	private Button myStopButton;
@@ -48,7 +48,7 @@ public class FBReaderServerActivity extends Activity {
 	private boolean isMyServiceRunning() {
 		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
 		for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-			if ("org.geometerplus.android.fbreader.server.ServerService".equals(service.service.getClassName())) {
+			if ("org.geometerplus.android.fbserver.FBServerService".equals(service.service.getClassName())) {
 				return true;
 			}
 		}
@@ -61,15 +61,15 @@ public class FBReaderServerActivity extends Activity {
 			if (intent.getAction().equals(START)) {
 				myStartButton.setEnabled(false);
 				myStopButton.setEnabled(true);
-				synchronized(FBReaderServerActivity.this) {
-					FBReaderServerActivity.this.notify();
+				synchronized(FBServerActivity.this) {
+					FBServerActivity.this.notify();
 				}
 			}
 			if (intent.getAction().equals(STOP)) {
 				myStartButton.setEnabled(true);
 				myStopButton.setEnabled(false);
-				synchronized(FBReaderServerActivity.this) {
-					FBReaderServerActivity.this.notify();
+				synchronized(FBServerActivity.this) {
+					FBServerActivity.this.notify();
 				}
 			}
 			if (intent.getAction().equals(STARTING)) {
@@ -91,25 +91,22 @@ public class FBReaderServerActivity extends Activity {
 		myStartButton.setText("Start");
 		myStartButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				try {
-					myProgress = ProgressDialog.show(FBReaderServerActivity.this, "Please, wait...", "Starting", true, false);
-					Intent startIntent = new Intent(FBReaderServerActivity.this, ServerService.class);
-					startIntent.putExtra(ServerService.PORT, Integer.parseInt(myPortEdit.getText().toString()));
-					startService(startIntent);
-					final Thread runner = new Thread(new Runnable() {
-						public void run() {
-							synchronized(FBReaderServerActivity.this) {
-								try {
-									FBReaderServerActivity.this.wait();
-								} catch (InterruptedException e) {
-								}
+				myProgress = ProgressDialog.show(FBServerActivity.this, "Please, wait...", "Starting", true, false);
+				Intent startIntent = new Intent(FBServerActivity.this, FBServerService.class);
+				startIntent.putExtra(FBServerService.PORT, myPortEdit.getText().toString());
+				startService(startIntent);
+				final Thread runner = new Thread(new Runnable() {
+					public void run() {
+						synchronized(FBServerActivity.this) {
+							try {
+								FBServerActivity.this.wait();
+							} catch (InterruptedException e) {
 							}
-							myHandler.sendEmptyMessage(0);
 						}
-					});
-					runner.start();
-				} catch (NumberFormatException e) {
-				}
+						myHandler.sendEmptyMessage(0);
+					}
+				});
+				runner.start();
 			}
 		});
 
@@ -117,14 +114,14 @@ public class FBReaderServerActivity extends Activity {
 		myStopButton.setText("Stop");
 		myStopButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
-				myProgress = ProgressDialog.show(FBReaderServerActivity.this, "Please, wait...", "Stopping", true, false);
-				Intent startIntent = new Intent(FBReaderServerActivity.this, ServerService.class);
+				myProgress = ProgressDialog.show(FBServerActivity.this, "Please, wait...", "Stopping", true, false);
+				Intent startIntent = new Intent(FBServerActivity.this, FBServerService.class);
 				stopService(startIntent);
 				final Thread runner = new Thread(new Runnable() {
 					public void run() {
-						synchronized(FBReaderServerActivity.this) {
+						synchronized(FBServerActivity.this) {
 							try {
-								FBReaderServerActivity.this.wait();
+								FBServerActivity.this.wait();
 							} catch (InterruptedException e) {
 							}
 						}
