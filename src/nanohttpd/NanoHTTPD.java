@@ -826,7 +826,7 @@ public class NanoHTTPD
 	}
 
 	private int myTcpPort;
-	private final ServerSocket myServerSocket;
+	protected final ServerSocket myServerSocket;
 	private Thread myThread;
 	private File myRootDir;
 

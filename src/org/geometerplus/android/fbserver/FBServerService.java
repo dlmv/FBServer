@@ -33,6 +33,7 @@ import org.geometerplus.android.fbserver.opds.*;
 public class FBServerService extends Service {
 
 	final static String PORT = "server_port";
+	final static String NAME = "server_name";
 	final static String RESULT = "server_result";
 
 	final static int STARTED = 0;
@@ -72,12 +73,31 @@ public class FBServerService extends Service {
 		sendBroadcast(new Intent(FBServerActivity.STARTING));
 	}
 
+	private void createOPDS(String name) {
+		OPDSCatalog root = new OPDSCatalog("/", name);
+		OPDSCatalog test1 = new OPDSCatalog("/test1/", "Test1");
+		OPDSCatalog test2 = new OPDSCatalog("/test2/", "Test2");
+		OPDSCatalog test11 = new OPDSCatalog("/test11/", "Test11");
+		OPDSCatalog test12 = new OPDSCatalog("/test12/", "Test12");
+		root.addChild(test1);
+		root.addChild(test2);
+		test1.addChild(test11);
+		test1.addChild(test12);
+		OPDSItem.save(root);
+		OPDSItem.save(test1);
+		OPDSItem.save(test2);
+		OPDSItem.save(test11);
+		OPDSItem.save(test12);
+	}
+
 	@Override
 	public int onStartCommand(final Intent intent, int flags, int startId) {
 		final Thread starter = new Thread(new Runnable() {
 			public void run () {
 				try {
 					String portStr = intent.getStringExtra(PORT);
+					String name = intent.getStringExtra(NAME);
+					createOPDS(name);
 					myPort = Integer.parseInt(portStr);
 					final int port = myPort;
 					myServer = new OPDSServer(port, FBServerService.this);
@@ -125,7 +145,7 @@ public class FBServerService extends Service {
 	}
 
 	private void showNotification() {
-		CharSequence text = "fgsgds";
+		CharSequence text = "FBServer is running";
 
 		Notification notification = new Notification(android.R.drawable.star_on, text,
 				System.currentTimeMillis());
@@ -134,7 +154,7 @@ public class FBServerService extends Service {
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
 				new Intent(this, FBServerActivity.class), 0);
 
-		notification.setLatestEventInfo(this, "fgsfds",
+		notification.setLatestEventInfo(this, "FBServer is running",
 					   text, contentIntent);
 		mNM.notify(NOTIFICATION, notification);
 	}

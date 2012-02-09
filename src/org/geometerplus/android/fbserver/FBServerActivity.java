@@ -33,6 +33,7 @@ public class FBServerActivity extends Activity {
 	private Button myStartButton;
 	private Button myStopButton;
 	private EditText myPortEdit;
+	private EditText myNameEdit;
 
 	private ProgressDialog myProgress;
 	private Handler myHandler = new Handler() {
@@ -94,6 +95,7 @@ public class FBServerActivity extends Activity {
 				myProgress = ProgressDialog.show(FBServerActivity.this, "Please, wait...", "Starting", true, false);
 				Intent startIntent = new Intent(FBServerActivity.this, FBServerService.class);
 				startIntent.putExtra(FBServerService.PORT, myPortEdit.getText().toString());
+				startIntent.putExtra(FBServerService.NAME, myNameEdit.getText().toString());
 				startService(startIntent);
 				final Thread runner = new Thread(new Runnable() {
 					public void run() {
@@ -139,6 +141,11 @@ public class FBServerActivity extends Activity {
 		portLabel.setText("Port:");
 		myPortEdit = (EditText)findViewById(R.id.port);
 		myPortEdit.setText("8080");
+
+		final TextView nameLabel = (TextView)findViewById(R.id.name_label);
+		nameLabel.setText("Name:");
+		myNameEdit = (EditText)findViewById(R.id.name);
+		myNameEdit.setText("My Library");
 
 		myDataUpdateReceiver = new DataUpdateReceiver();
 		IntentFilter filter = new IntentFilter(START);

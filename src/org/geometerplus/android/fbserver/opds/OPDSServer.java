@@ -45,6 +45,11 @@ public class OPDSServer extends NanoHTTPD {
 		myContext = context;
 		myPort = port;
 		expose();
+		OPDSCreator.init(context);
+	}
+
+	public String getHostAddress() {
+		return myServerSocket.getInetAddress().getHostAddress();
 	}
 
 	private void expose() throws IOException {
@@ -78,9 +83,15 @@ public class OPDSServer extends NanoHTTPD {
 		myJmDNSes = null;
 	}
 
-	public Response serve( String uri, String method, Properties header, Properties parms, Properties files ) {
-		String msg = "It Works";
-		return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg );
+	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
+		OPDSItem item = OPDSItem.get(uri);
+		if (item != null) {
+			if (item instanceof OPDSCatalog) {
+				String msg = OPDSCreator.getInstance().createFeed((OPDSCatalog)item);
+				return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg);
+			}
+		}
+		return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_HTML, "404");
 	}
 
 	public void stop() {

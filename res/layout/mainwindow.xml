@@ -11,6 +11,18 @@
 		android:orientation="vertical"
 	>
 		<TextView
+			android:id="@+id/name_label"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:singleLine="true"
+		/>
+		<EditText
+			android:id="@+id/name"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:singleLine="true"
+		/>
+		<TextView
 			android:id="@+id/port_label"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"

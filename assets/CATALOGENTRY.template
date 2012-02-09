@@ -1,0 +1,6 @@
+ <entry>
+  <id>%ID%</id>
+  <title>%TITLE%</title>
+  <link href="%LINK%" type="application/atom+xml;profile=opds-catalog" />
+ </entry>
+

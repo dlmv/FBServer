@@ -1,0 +1,6 @@
+ <entry>
+  <id>%ID%</id>
+  <title>%TITLE%</title>
+  <link href="%LINK%" rel="http://opds-spec.org/acquisition/open-access" type="%TYPE%" />
+ </entry>
+
