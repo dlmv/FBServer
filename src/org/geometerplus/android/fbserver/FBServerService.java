@@ -20,7 +20,7 @@
 package org.geometerplus.android.fbserver;
 
 import android.app.*;
-import android.content.Intent;
+import android.content.*;
 import android.os.*;
 import android.util.Log;
 import android.widget.Toast;
@@ -52,6 +52,7 @@ public class FBServerService extends Service {
 				Toast.makeText(getApplicationContext(), "Server started on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
 				sendBroadcast(new Intent(FBServerActivity.START));
 				showNotification();
+				createOPDS("My Library");
 			}
 			if (res == FAILED) {
 				Toast.makeText(getApplicationContext(), myError, Toast.LENGTH_SHORT).show();
@@ -73,21 +74,26 @@ public class FBServerService extends Service {
 		sendBroadcast(new Intent(FBServerActivity.STARTING));
 	}
 
+	private boolean isLibraryServiceRunning() {
+		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+		for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+			if ("org.geometerplus.android.fbreader.libraryService.LibraryService".equals(service.service.getClassName())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private void createOPDS(String name) {
-		OPDSCatalog root = new OPDSCatalog("/", name);
-		OPDSCatalog test1 = new OPDSCatalog("/test1/", "Test1");
-		OPDSCatalog test2 = new OPDSCatalog("/test2/", "Test2");
-		OPDSCatalog test11 = new OPDSCatalog("/test11/", "Test11");
-		OPDSCatalog test12 = new OPDSCatalog("/test12/", "Test12");
-		root.addChild(test1);
-		root.addChild(test2);
-		test1.addChild(test11);
-		test1.addChild(test12);
-		OPDSItem.save(root);
-		OPDSItem.save(test1);
-		OPDSItem.save(test2);
-		OPDSItem.save(test11);
-		OPDSItem.save(test12);
+		if (!isLibraryServiceRunning()) {
+			Toast.makeText(getApplicationContext(), "LibraryService is not running", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		Intent i = new Intent();
+		i.setClassName("org.geometerplus.zlibrary.ui.android", "org.geometerplus.android.fbreader.libraryService.LibraryService");
+		LibraryServiceConnection conn = new LibraryServiceConnection();
+		getApplicationContext().bindService(i, conn, 0);
+
 	}
 
 	@Override
@@ -97,7 +103,6 @@ public class FBServerService extends Service {
 				try {
 					String portStr = intent.getStringExtra(PORT);
 					String name = intent.getStringExtra(NAME);
-					createOPDS(name);
 					myPort = Integer.parseInt(portStr);
 					final int port = myPort;
 					myServer = new OPDSServer(port, FBServerService.this);

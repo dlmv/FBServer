@@ -53,7 +53,7 @@ public class OPDSServer extends NanoHTTPD {
 	}
 
 	private void expose() throws IOException {
-		ServiceInfo serviceInfo = ServiceInfo.create("_stanza._tcp.local.", "FBReader server", myPort, 0, 0, "path=/stanza");
+		ServiceInfo serviceInfo = ServiceInfo.create("_stanza._tcp.local.", "FBReader server", myPort, 0, 0, "");
 		final WifiManager wifiManager = (WifiManager)myContext.getSystemService(Context.WIFI_SERVICE);
 		myLock = wifiManager.createMulticastLock("FBServer_lock");
 		myLock.setReferenceCounted(true);
@@ -90,8 +90,11 @@ public class OPDSServer extends NanoHTTPD {
 				String msg = OPDSCreator.getInstance().createFeed((OPDSCatalog)item);
 				return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg);
 			}
+			if (item instanceof OPDSBook) {
+				return serveFile(uri, header, myRootDir, true);
+			}
 		}
-		return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_HTML, "404");
+		return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_PLAINTEXT, "Error 404, file not found.");
 	}
 
 	public void stop() {
