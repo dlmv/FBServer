@@ -34,7 +34,7 @@ class LibraryServiceConnection implements ServiceConnection {
 		Log.d("fbserver", "Connected! Name: " + name.getClassName());
 		Iface = LibraryInterface.Stub.asInterface(binder);
 
-		OPDSCatalog root = new OPDSCatalog("/", "My Library");
+		OPDSCatalog root = new OPDSCatalog(OPDSServer.ROOT_URL, "My Library");
 		OPDSItem.save(root);
 		BookObject book = null;
 		try {

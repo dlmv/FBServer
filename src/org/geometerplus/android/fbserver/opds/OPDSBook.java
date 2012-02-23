@@ -44,10 +44,6 @@ public class OPDSBook extends OPDSItem {
 		return myType;
 	}
 
-	public String getFeed() {
-		return null;
-	}
-
 	protected String getEntry() {
 		return OPDSCreator.getInstance().createEntry(this);
 	}

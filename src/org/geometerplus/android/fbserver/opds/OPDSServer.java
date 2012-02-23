@@ -30,12 +30,23 @@ import android.content.Context;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import android.content.res.AssetManager;
 
 import nanohttpd.*;
 
+import android.util.Log;
+
 public class OPDSServer extends NanoHTTPD {
 
+	public static final String ROOT_URL = "/opds";
+	public static final String ICON_URL = "/icon.png";
+
+	private String myIp = "";
+
+	private static final String ICON_FILE = "fbreader.png";
+
 	private final int myPort;
+
 	private WifiManager.MulticastLock myLock = null;
 	private ArrayList<JmDNS> myJmDNSes = new ArrayList<JmDNS>();
 	private Context myContext;
@@ -48,12 +59,11 @@ public class OPDSServer extends NanoHTTPD {
 		OPDSCreator.init(context);
 	}
 
-	public String getHostAddress() {
-		return myServerSocket.getInetAddress().getHostAddress();
+	public String getIconAddress() {
+		return "http://" + myIp + ":" + Integer.toString(myPort) + ICON_URL;
 	}
 
 	private void expose() throws IOException {
-		ServiceInfo serviceInfo = ServiceInfo.create("_stanza._tcp.local.", "FBReader server", myPort, 0, 0, "");
 		final WifiManager wifiManager = (WifiManager)myContext.getSystemService(Context.WIFI_SERVICE);
 		myLock = wifiManager.createMulticastLock("FBServer_lock");
 		myLock.setReferenceCounted(true);
@@ -64,6 +74,9 @@ public class OPDSServer extends NanoHTTPD {
 			for (InetAddress address : addresses) {
 				final JmDNS mcDNS = JmDNS.create(address, "FBServer");
 				myJmDNSes.add(mcDNS);
+				Hashtable<String, String> props = new Hashtable<String, String>();
+				props.put("path", "/opds");
+				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", "FBReader server", myPort, 0, 0, props);
 				mcDNS.registerService(serviceInfo);
 			}
 		}
@@ -84,17 +97,23 @@ public class OPDSServer extends NanoHTTPD {
 	}
 
 	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
+		if (uri.equals(ICON_URL)) {
+			try {
+				return new Response(HTTP_OK, "image/png", myContext.getAssets().open(ICON_FILE));
+			} catch (IOException e) {
+			}
+		}
 		OPDSItem item = OPDSItem.get(uri);
 		if (item != null) {
 			if (item instanceof OPDSCatalog) {
-				String msg = OPDSCreator.getInstance().createFeed((OPDSCatalog)item);
+				String msg = OPDSCreator.getInstance().createFeed((OPDSCatalog)item, getIconAddress());
 				return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg);
 			}
 			if (item instanceof OPDSBook) {
 				return serveFile(uri, header, myRootDir, true);
 			}
 		}
-		return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_PLAINTEXT, "Error 404, file not found.");
+		return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_PLAINTEXT, "404");
 	}
 
 	public void stop() {
@@ -124,6 +143,9 @@ public class OPDSServer extends NanoHTTPD {
 				for (InetAddress addr : Collections.list(iface.getInetAddresses())) {
 					if (!addr.isLoopbackAddress() && addr instanceof Inet4Address) {
 						addresses.add(addr);
+						if (myIp == "") {
+							myIp = addr.getHostAddress();
+						}
 					}
 				}
 			}

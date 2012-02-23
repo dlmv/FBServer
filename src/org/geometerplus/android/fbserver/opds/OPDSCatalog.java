@@ -41,10 +41,6 @@ public class OPDSCatalog extends OPDSItem {
 		return myChildren;
 	}
 
-	public String getFeed() {
-		return OPDSCreator.getInstance().createFeed(this);
-	}
-
 	protected String getEntry() {
 		return OPDSCreator.getInstance().createEntry(this);
 	}

@@ -42,7 +42,6 @@ public abstract class OPDSItem {
 		return ourIds.get(id);
 	}
 
-	public abstract String getFeed();
 	protected abstract String getEntry();
 
 	public String Id; //Now is also a url

@@ -47,8 +47,12 @@ public class OPDSCreator {
 		return ourInstance;
 	}
 
-	private static String convertStreamToString(InputStream is) { 
-		return new Scanner(is).useDelimiter("\\A").next();
+	private static String convertStreamToString(InputStream is) {
+		try {
+			return new java.util.Scanner(is).useDelimiter("\\A").next();
+		} catch (java.util.NoSuchElementException e) {
+			return "";
+		}
 	}
 
 	private OPDSCreator(Context context) {
@@ -61,7 +65,7 @@ public class OPDSCreator {
 		}
 	}
 
-	String createFeed(OPDSCatalog o) {
+	String createFeed(OPDSCatalog o, String iconUrl) {
 		String entries = "";
 		for (OPDSItem i : o.getChildren()) {
 			entries = entries + i.getEntry();
@@ -69,7 +73,8 @@ public class OPDSCreator {
 		return myFeedTemplate
 			.replace("%ID%", o.Id)
 			.replace("%TITLE%", o.Title)
-			.replace("%START%", "/")
+			.replace("%START%", OPDSServer.ROOT_URL)
+			.replace("%ICON%", iconUrl)
 			.replace("%ENTRIES%", entries);
 	}
 

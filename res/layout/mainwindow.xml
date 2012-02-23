@@ -21,6 +21,7 @@
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
 			android:singleLine="true"
+			android:windowSoftInputMode="stateHidden"
 		/>
 		<TextView
 			android:id="@+id/port_label"
@@ -34,6 +35,7 @@
 			android:layout_height="wrap_content"
 			android:singleLine="true"
 			android:inputType="number"
+			android:windowSoftInputMode="stateHidden"
 		/>
 		<include layout="@layout/ok_cancel_buttons" android:id="@+id/start_stop_buttons" />
 	</LinearLayout>
