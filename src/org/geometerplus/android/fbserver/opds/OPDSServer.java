@@ -46,15 +46,17 @@ public class OPDSServer extends NanoHTTPD {
 	private static final String ICON_FILE = "fbreader.png";
 
 	private final int myPort;
+	private final String myName;
 
 	private WifiManager.MulticastLock myLock = null;
 	private ArrayList<JmDNS> myJmDNSes = new ArrayList<JmDNS>();
 	private Context myContext;
 
-	public OPDSServer(int port, Context context) throws IOException {
+	public OPDSServer(int port, String name, Context context) throws IOException {
 		super(port, Environment.getExternalStorageDirectory());
 		myContext = context;
 		myPort = port;
+		myName = name;
 		expose();
 		OPDSCreator.init(context);
 	}
@@ -76,7 +78,7 @@ public class OPDSServer extends NanoHTTPD {
 				myJmDNSes.add(mcDNS);
 				Hashtable<String, String> props = new Hashtable<String, String>();
 				props.put("path", "/opds");
-				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", "FBReader server", myPort, 0, 0, props);
+				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", myName, myPort, 0, 0, props);
 				mcDNS.registerService(serviceInfo);
 			}
 		}
@@ -120,9 +122,6 @@ public class OPDSServer extends NanoHTTPD {
 		unexpose();
 		super.stop();
 	}
-
-
-
 
 	private List<InetAddress> getLocalIpAddresses() {
 		final List<InetAddress> addresses = new LinkedList<InetAddress>();

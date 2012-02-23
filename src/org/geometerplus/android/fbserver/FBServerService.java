@@ -28,40 +28,65 @@ import android.widget.Toast;
 import java.io.*;
 
 import org.geometerplus.android.fbserver.opds.*;
+import org.geometerplus.android.fbreader.libraryService.*;
 
 
-public class FBServerService extends Service {
+public class FBServerService extends Service implements ServiceConnection {
+
+	static boolean exists = false;
 
 	final static String PORT = "server_port";
 	final static String NAME = "server_name";
-	final static String RESULT = "server_result";
 
-	final static int STARTED = 0;
-	final static int FAILED = 1;
-	final static int STOPPED = 2;
+	final static String ASK_STATE = "ask_state";
+
+	final static int STATE_STARTED = 0;
+	final static int STATE_STARTING = 1;
+	final static int STATE_FAILED = 2;
+	final static int STATE_STOPPING = 3;
+	final static int STATE_STOPPED = 4;
+
+	private int myState;
 
 	private NotificationManager mNM;
 	private int NOTIFICATION = 0;
 	private int myPort;
+	private String myName = "";
 	private String myError = "";
 
 	final Handler myHandler = new Handler() {
 		public void handleMessage (Message msg) {
-			int res = msg.getData().getInt(RESULT);
-			if (res == STARTED) {
-				Toast.makeText(getApplicationContext(), "Server started on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
-				sendBroadcast(new Intent(FBServerActivity.START));
-				showNotification();
-				createOPDS("My Library");
-			}
-			if (res == FAILED) {
-				Toast.makeText(getApplicationContext(), myError, Toast.LENGTH_SHORT).show();
-				stopSelf();
-			}
-			if (res == STOPPED) {
-				Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
-				sendBroadcast(new Intent(FBServerActivity.STOP));
-				mNM.cancel(NOTIFICATION);
+			Intent i = new Intent();
+			i.putExtra(PORT, Integer.toString(myPort));
+			i.putExtra(NAME, myName);
+			switch (myState) {
+				case STATE_STARTED:
+					createOPDS();
+					Toast.makeText(getApplicationContext(), "Server is running on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
+					i.setAction(FBServerActivity.STARTED);
+					sendBroadcast(i);
+					showNotification();
+					break;
+				case STATE_STARTING:
+					i.setAction(FBServerActivity.STARTING);
+					sendBroadcast(i);
+					break;
+				case STATE_FAILED:
+					Toast.makeText(getApplicationContext(), myError, Toast.LENGTH_SHORT).show();
+					i.setAction(FBServerActivity.STOPPING);
+					sendBroadcast(i);
+					stopSelf();
+					break;
+				case STATE_STOPPING:
+					i.setAction(FBServerActivity.STOPPING);
+					sendBroadcast(i);
+					break;
+				case STATE_STOPPED:
+					Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
+					i.setAction(FBServerActivity.STOPPED);
+					sendBroadcast(i);
+					mNM.cancel(NOTIFICATION);
+					break;
 			}
 		}
 	};
@@ -70,8 +95,16 @@ public class FBServerService extends Service {
 
 	@Override
 	public void onCreate() {
+		exists = true;
+		super.onCreate();
 		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-		sendBroadcast(new Intent(FBServerActivity.STARTING));
+		myState = STATE_STARTING;
+		myHandler.sendEmptyMessage(0);
+
+		myMessageReceiver = new MessageReceiver();
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(ASK_STATE);
+		registerReceiver(myMessageReceiver, filter);
 	}
 
 	private boolean isLibraryServiceRunning() {
@@ -84,15 +117,14 @@ public class FBServerService extends Service {
 		return false;
 	}
 
-	private void createOPDS(String name) {
+	private void createOPDS() {
 		if (!isLibraryServiceRunning()) {
 			Toast.makeText(getApplicationContext(), "LibraryService is not running", Toast.LENGTH_SHORT).show();
 			return;
 		}
 		Intent i = new Intent();
 		i.setClassName("org.geometerplus.zlibrary.ui.android", "org.geometerplus.android.fbreader.libraryService.LibraryService");
-		LibraryServiceConnection conn = new LibraryServiceConnection();
-		getApplicationContext().bindService(i, conn, 0);
+		getApplicationContext().bindService(i, this, 0);
 
 	}
 
@@ -102,22 +134,16 @@ public class FBServerService extends Service {
 			public void run () {
 				try {
 					String portStr = intent.getStringExtra(PORT);
-					String name = intent.getStringExtra(NAME);
+					myName = intent.getStringExtra(NAME);
 					myPort = Integer.parseInt(portStr);
 					final int port = myPort;
-					myServer = new OPDSServer(port, FBServerService.this);
-					Message myMessage=new Message();
-					Bundle resBundle = new Bundle();
-					resBundle.putInt(RESULT, STARTED);
-					myMessage.setData(resBundle);
-					myHandler.sendMessage(myMessage);
+					myServer = new OPDSServer(port, myName, FBServerService.this);
+					myState = STATE_STARTED;
+					myHandler.sendEmptyMessage(0);
 				} catch (Exception e) {
-					Message myMessage=new Message();
-					Bundle resBundle = new Bundle();
-					resBundle.putInt(RESULT, FAILED);
 					myError = e.getMessage();
-					myMessage.setData(resBundle);
-					myHandler.sendMessage(myMessage);
+					myState = STATE_FAILED;
+					myHandler.sendEmptyMessage(0);
 				}
 			}
 		});
@@ -127,22 +153,27 @@ public class FBServerService extends Service {
 
 	@Override
 	public void onDestroy() {
+		myState = STATE_STOPPING;
+		myHandler.sendEmptyMessage(0);
 		if (myServer != null) {
 			final Thread finisher = new Thread(new Runnable() {
 				public void run () {
 					myServer.stop();
-					Message myMessage=new Message();
-					Bundle resBundle = new Bundle();
-					resBundle.putInt(RESULT, STOPPED);
-					myMessage.setData(resBundle);
-					myHandler.sendMessage(myMessage);
+					myState = STATE_STOPPED;
+					myHandler.sendEmptyMessage(0);
+					exists = false;
 				}
 			});
 			finisher.start();
 		} else {
-			Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
-			sendBroadcast(new Intent(FBServerActivity.STOP));
+			myState = STATE_STOPPED;
+			myHandler.sendEmptyMessage(0);
+			exists = false;
 		}
+		if (myMessageReceiver != null) {
+			unregisterReceiver(myMessageReceiver);
+		}
+		super.onDestroy();
 	}
 
 	public IBinder onBind(Intent intent) {
@@ -163,4 +194,52 @@ public class FBServerService extends Service {
 					   text, contentIntent);
 		mNM.notify(NOTIFICATION, notification);
 	}
+
+	private class MessageReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			try {
+				Thread.sleep(200);//wait for activity to start waiting // maybe no need?
+			} catch (InterruptedException e) {
+			}
+			myHandler.sendEmptyMessage(0);
+		}
+	}
+
+	private MessageReceiver myMessageReceiver;
+
+//----------from ServiceConnection:
+
+	private LibraryInterface Iface;
+
+	public void onServiceConnected(ComponentName name, IBinder binder) {
+		Iface = LibraryInterface.Stub.asInterface(binder);
+
+		OPDSCatalog root = new OPDSCatalog(OPDSServer.ROOT_URL, myName);
+		OPDSItem.save(root);
+		BookObject book = null;
+		try {
+			book = Iface.getRecentBook();
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+		}
+		String path = book.Path;
+		int index = path.lastIndexOf(':');
+		if (index != -1) {
+			path = path.substring(0, index);
+		}
+		if (path.startsWith("/sdcard")) {
+			path = path.substring("/sdcard".length());
+		}
+		OPDSBook recent = new OPDSBook(path, "Recent book");
+		recent.setFilePath(path);
+		recent.setType("application/fb2+zip");
+		root.addChild(recent);
+		OPDSItem.save(recent);
+	}
+
+	public void onServiceDisconnected(ComponentName name) {
+		Iface = null;
+	}
+
 }
