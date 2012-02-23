@@ -106,7 +106,7 @@ public class OPDSServer extends NanoHTTPD {
 		OPDSItem item = OPDSItem.get(uri);
 		if (item != null) {
 			if (item instanceof OPDSCatalog) {
-				String msg = OPDSCreator.getInstance().createFeed((OPDSCatalog)item, getIconAddress());
+				String msg = OPDSCreator.createFeed((OPDSCatalog)item, getIconAddress());
 				return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg);
 			}
 			if (item instanceof OPDSBook) {

@@ -25,26 +25,24 @@ import android.content.Context;
 import java.util.*;
 import java.io.*;
 
-public class OPDSCreator {
-
-	private static OPDSCreator ourInstance;
+public abstract class OPDSCreator {
 
 	private static final String FEED_TEMPLATE_FILE = "FEED.template";
 	private static final String BOOKENTRY_TEMPLATE_FILE = "BOOKENTRY.template";
 	private static final String CATALOGENTRY_TEMPLATE_FILE = "CATALOGENTRY.template";
 
-	private String myFeedTemplate;
-	private String myBookEntryTemplate;
-	private String myCatalogEntryTemplate;
+	private static String ourFeedTemplate;
+	private static String ourBookEntryTemplate;
+	private static String ourCatalogEntryTemplate;
 
 	public static void init(Context context) {
-		if (ourInstance == null) {
-			ourInstance = new OPDSCreator(context);
+		AssetManager mgr = context.getAssets();
+		try {
+			ourFeedTemplate = convertStreamToString(mgr.open(FEED_TEMPLATE_FILE));
+			ourBookEntryTemplate = convertStreamToString(mgr.open(BOOKENTRY_TEMPLATE_FILE));
+			ourCatalogEntryTemplate = convertStreamToString(mgr.open(CATALOGENTRY_TEMPLATE_FILE));
+		} catch (IOException e) {
 		}
-	}
-
-	public static OPDSCreator getInstance() {
-		return ourInstance;
 	}
 
 	private static String convertStreamToString(InputStream is) {
@@ -55,22 +53,12 @@ public class OPDSCreator {
 		}
 	}
 
-	private OPDSCreator(Context context) {
-		AssetManager mgr = context.getAssets();
-		try {
-			myFeedTemplate = convertStreamToString(mgr.open(FEED_TEMPLATE_FILE));
-			myBookEntryTemplate = convertStreamToString(mgr.open(BOOKENTRY_TEMPLATE_FILE));
-			myCatalogEntryTemplate = convertStreamToString(mgr.open(CATALOGENTRY_TEMPLATE_FILE));
-		} catch (IOException e) {
-		}
-	}
-
-	String createFeed(OPDSCatalog o, String iconUrl) {
+	static String createFeed(OPDSCatalog o, String iconUrl) {
 		String entries = "";
 		for (OPDSItem i : o.getChildren()) {
 			entries = entries + i.getEntry();
 		}
-		return myFeedTemplate
+		return ourFeedTemplate
 			.replace("%ID%", o.Id)
 			.replace("%TITLE%", o.Title)
 			.replace("%START%", OPDSServer.ROOT_URL)
@@ -78,16 +66,16 @@ public class OPDSCreator {
 			.replace("%ENTRIES%", entries);
 	}
 
-	String createEntry(OPDSBook o) {
-		return myBookEntryTemplate
+	static String createEntry(OPDSBook o) {
+		return ourBookEntryTemplate
 			.replace("%ID%", o.Id)
 			.replace("%TITLE%", o.Title)
 			.replace("%LINK%", o.Id)
 			.replace("%TYPE%", o.getType());
 	}
 
-	String createEntry(OPDSCatalog o) {
-		return myCatalogEntryTemplate
+	static String createEntry(OPDSCatalog o) {
+		return ourCatalogEntryTemplate
 			.replace("%ID%", o.Id)
 			.replace("%TITLE%", o.Title)
 			.replace("%LINK%", o.Id);
