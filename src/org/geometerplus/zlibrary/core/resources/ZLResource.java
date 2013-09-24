@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2012 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2013 Geometer Plus <contact@geometerplus.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,34 +17,24 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbserver.opds;
+package org.geometerplus.zlibrary.core.resources;
 
-import java.util.*;
+public class ZLResource {//TODO:implement
+	public final String Name;
 
-public abstract class OPDSItem {
-
-	private static final HashMap<String, OPDSItem> ourIds = new HashMap<String, OPDSItem>();
-
-	public OPDSItem(String id, String title) {
-		Id = id;
-		Title = title;
+	public static ZLResource resource(String key) {
+		return new ZLResource(key);
 	}
 
-	public static boolean save(OPDSItem i) {
-		if (!ourIds.containsKey(i.Id)) {
-			ourIds.put(i.Id, i);
-			return true;
-		}
-		return false;
+	protected ZLResource(String name) {
+		Name = name;
 	}
 
-	public static OPDSItem get(String id) {
-		return ourIds.get(id);
+	public String getValue() {
+		return Name;
 	}
 
-	protected abstract String getEntry();
-
-	public String Id; //Now is also a url
-	public String Title;
-
-};
+	public ZLResource getResource(String key) {
+		return new ZLResource(Name + "/" + key);
+	}
+}

@@ -25,15 +25,18 @@ import android.os.*;
 import android.util.Log;
 import android.widget.Toast;
 
-import java.io.*;
-
 import org.geometerplus.android.fbserver.opds.*;
 import org.geometerplus.android.fbreader.libraryService.*;
+import org.geometerplus.fbreader.book.*;
+import org.geometerplus.fbreader.book.IBookCollection.Status;
+import org.geometerplus.fbreader.library.RootTree;
 
 
-public class FBServerService extends Service implements ServiceConnection {
+public class FBServerService extends Service implements BookCollectionShadow.Listener {
 
-	static boolean exists = false;
+	private final IBookCollection myCollection = new BookCollectionShadow();
+
+	static FBServerService Instance = null;
 
 	final static String PORT = "server_port";
 	final static String NAME = "server_name";
@@ -48,11 +51,11 @@ public class FBServerService extends Service implements ServiceConnection {
 
 	private int myState;
 
-	private NotificationManager mNM;
-	private int NOTIFICATION = 0;
 	private int myPort;
 	private String myName = "";
 	private String myError = "";
+	
+	private RootTree myRootTree;
 
 	final Handler myHandler = new Handler() {
 		public void handleMessage (Message msg) {
@@ -60,33 +63,32 @@ public class FBServerService extends Service implements ServiceConnection {
 			i.putExtra(PORT, Integer.toString(myPort));
 			i.putExtra(NAME, myName);
 			switch (myState) {
-				case STATE_STARTED:
-					createOPDS();
-					Toast.makeText(getApplicationContext(), "Server is running on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
-					i.setAction(FBServerActivity.STARTED);
-					sendBroadcast(i);
-					showNotification();
-					break;
-				case STATE_STARTING:
-					i.setAction(FBServerActivity.STARTING);
-					sendBroadcast(i);
-					break;
-				case STATE_FAILED:
-					Toast.makeText(getApplicationContext(), myError, Toast.LENGTH_SHORT).show();
-					i.setAction(FBServerActivity.STOPPING);
-					sendBroadcast(i);
-					stopSelf();
-					break;
-				case STATE_STOPPING:
-					i.setAction(FBServerActivity.STOPPING);
-					sendBroadcast(i);
-					break;
-				case STATE_STOPPED:
-					Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
-					i.setAction(FBServerActivity.STOPPED);
-					sendBroadcast(i);
-					mNM.cancel(NOTIFICATION);
-					break;
+			case STATE_STARTED:
+				Toast.makeText(getApplicationContext(), "Server is running on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
+				i.setAction(FBServerActivity.STARTED);
+				sendBroadcast(i);
+				showNotification();
+				break;
+			case STATE_STARTING:
+				i.setAction(FBServerActivity.STARTING);
+				sendBroadcast(i);
+				break;
+			case STATE_FAILED:
+				Toast.makeText(getApplicationContext(), myError, Toast.LENGTH_SHORT).show();
+				i.setAction(FBServerActivity.STOPPING);
+				sendBroadcast(i);
+				stopSelf();
+				break;
+			case STATE_STOPPING:
+				i.setAction(FBServerActivity.STOPPING);
+				sendBroadcast(i);
+				break;
+			case STATE_STOPPED:
+				Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
+				i.setAction(FBServerActivity.STOPPED);
+				sendBroadcast(i);
+				FBServerService.this.stopForeground(true);
+				break;
 			}
 		}
 	};
@@ -95,9 +97,8 @@ public class FBServerService extends Service implements ServiceConnection {
 
 	@Override
 	public void onCreate() {
-		exists = true;
 		super.onCreate();
-		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+		Instance = this;
 		myState = STATE_STARTING;
 		myHandler.sendEmptyMessage(0);
 
@@ -105,27 +106,15 @@ public class FBServerService extends Service implements ServiceConnection {
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(ASK_STATE);
 		registerReceiver(myMessageReceiver, filter);
-	}
-
-	private boolean isLibraryServiceRunning() {
-		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
-		for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-			if ("org.geometerplus.android.fbreader.libraryService.LibraryService".equals(service.service.getClassName())) {
-				return true;
+		((BookCollectionShadow)myCollection).addListener(this);
+		((BookCollectionShadow)myCollection).bindToService(this, new Runnable() {
+			@Override
+			public void run() {
+				setBuildStatus(myCollection.status());
 			}
-		}
-		return false;
-	}
-
-	private void createOPDS() {
-		if (!isLibraryServiceRunning()) {
-			Toast.makeText(getApplicationContext(), "LibraryService is not running", Toast.LENGTH_SHORT).show();
-			return;
-		}
-		Intent i = new Intent();
-		i.setClassName("org.geometerplus.zlibrary.ui.android", "org.geometerplus.android.fbreader.libraryService.LibraryService");
-		getApplicationContext().bindService(i, this, 0);
-
+		});
+		myRootTree = new RootTree(myCollection);
+		
 	}
 
 	@Override
@@ -137,9 +126,7 @@ public class FBServerService extends Service implements ServiceConnection {
 					myName = intent.getStringExtra(NAME);
 					myPort = Integer.parseInt(portStr);
 					final int port = myPort;
-					myServer = new OPDSServer(port, myName, FBServerService.this);
-					myState = STATE_STARTED;
-					myHandler.sendEmptyMessage(0);
+					myServer = new OPDSServer(port, myName, FBServerService.this, myRootTree);
 				} catch (Exception e) {
 					myError = e.getMessage();
 					myState = STATE_FAILED;
@@ -161,18 +148,19 @@ public class FBServerService extends Service implements ServiceConnection {
 					myServer.stop();
 					myState = STATE_STOPPED;
 					myHandler.sendEmptyMessage(0);
-					exists = false;
+					Instance = null;
 				}
 			});
 			finisher.start();
 		} else {
 			myState = STATE_STOPPED;
 			myHandler.sendEmptyMessage(0);
-			exists = false;
+			Instance = null;
 		}
 		if (myMessageReceiver != null) {
 			unregisterReceiver(myMessageReceiver);
 		}
+		((BookCollectionShadow)myCollection).unbind();
 		super.onDestroy();
 	}
 
@@ -182,17 +170,14 @@ public class FBServerService extends Service implements ServiceConnection {
 
 	private void showNotification() {
 		CharSequence text = "FBServer is running";
-
 		Notification notification = new Notification(android.R.drawable.star_on, text,
 				System.currentTimeMillis());
 		notification.flags = Notification.FLAG_ONGOING_EVENT;
-
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
 				new Intent(this, FBServerActivity.class), 0);
-
 		notification.setLatestEventInfo(this, "FBServer is running",
-					   text, contentIntent);
-		mNM.notify(NOTIFICATION, notification);
+				text, contentIntent);
+		this.startForeground(1, notification);
 	}
 
 	private class MessageReceiver extends BroadcastReceiver {
@@ -208,38 +193,52 @@ public class FBServerService extends Service implements ServiceConnection {
 
 	private MessageReceiver myMessageReceiver;
 
-//----------from ServiceConnection:
+	private Status myBuildStatus = Status.NotStarted;
 
-	private LibraryInterface Iface;
-
-	public void onServiceConnected(ComponentName name, IBinder binder) {
-		Iface = LibraryInterface.Stub.asInterface(binder);
-
-		OPDSCatalog root = new OPDSCatalog(OPDSServer.ROOT_URL, myName);
-		OPDSItem.save(root);
-		BookObject book = null;
-		try {
-			book = Iface.getRecentBook();
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-		}
-		String path = book.Path;
-		int index = path.lastIndexOf(':');
-		if (index != -1) {
-			path = path.substring(0, index);
-		}
-		if (path.startsWith("/sdcard")) {
-			path = path.substring("/sdcard".length());
-		}
-		OPDSBook recent = new OPDSBook(path, "Recent book");
-		recent.setFilePath(path);
-		recent.setType("application/fb2+zip");
-		root.addChild(recent);
-		OPDSItem.save(recent);
+	void setBuildStatus(Status status) {
+		myBuildStatus = status;
+		tryToGetBooks();
 	}
 
-	public void onServiceDisconnected(ComponentName name) {
-		Iface = null;
+	void tryToGetBooks() {
+		if (Status.Succeeded.equals(myBuildStatus)) {
+			getBooks();
+			myState = STATE_STARTED;
+			myHandler.sendEmptyMessage(0);
+		}
+	}
+
+	private void getBooks() {
+//		OPDSCatalog root = new OPDSCatalog(OPDSServer.ROOT_URL, myName);
+//		OPDSItem.save(root);
+//		try {
+//			int LIMIT = 20;
+//			boolean end = false;
+//			BookQuery query = new BookQuery(new Filter.Empty(), LIMIT);
+//			while (!end) {
+//				List<Book> books = myCollection.books(query);
+//				if (books.isEmpty()) {
+//					end = true;
+//				} else {
+//					query = query.next();
+//					for (Book b : books) {
+//						Log.e("BOOK", b.getTitle());
+//					}
+//				}
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace(System.err);
+//		}
+	}
+
+	@Override
+	public void onBookEvent(BookEvent event, Book book) {
+		myRootTree.onBookEvent(event, book);
+	}
+
+	@Override
+	public void onBuildEvent(Status status) {
+		setBuildStatus(status);
 	}
 
 }

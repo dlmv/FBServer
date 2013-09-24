@@ -25,6 +25,9 @@ import java.util.*;
 import android.os.*;
 
 import javax.jmdns.*;
+
+import org.geometerplus.fbreader.library.*;
+
 import android.net.wifi.WifiManager;
 import android.content.Context;
 
@@ -38,7 +41,7 @@ import android.util.Log;
 
 public class OPDSServer extends NanoHTTPD {
 
-	public static final String ROOT_URL = "/opds";
+	public static final String ROOT_URL = "/root";
 	public static final String ICON_URL = "/icon.png";
 
 	private String myIp = "";
@@ -47,17 +50,20 @@ public class OPDSServer extends NanoHTTPD {
 
 	private final int myPort;
 	private final String myName;
+	private final RootTree myRootTree;
 
 	private WifiManager.MulticastLock myLock = null;
 	private ArrayList<JmDNS> myJmDNSes = new ArrayList<JmDNS>();
 	private Context myContext;
 
-	public OPDSServer(int port, String name, Context context) throws IOException {
-		super(port, Environment.getExternalStorageDirectory());
+	public OPDSServer(int port, String name, Context context, RootTree root) throws IOException {
+		super(port, Environment.getRootDirectory());
 		myContext = context;
 		myPort = port;
 		myName = name;
-		expose();
+		myRootTree = root;
+		
+//		expose();
 		OPDSCreator.init(context);
 	}
 
@@ -77,7 +83,7 @@ public class OPDSServer extends NanoHTTPD {
 				final JmDNS mcDNS = JmDNS.create(address, "FBServer");
 				myJmDNSes.add(mcDNS);
 				Hashtable<String, String> props = new Hashtable<String, String>();
-				props.put("path", "/opds");
+				props.put("path", ROOT_URL);
 				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", myName, myPort, 0, 0, props);
 				mcDNS.registerService(serviceInfo);
 			}
@@ -105,21 +111,30 @@ public class OPDSServer extends NanoHTTPD {
 			} catch (IOException e) {
 			}
 		}
-		OPDSItem item = OPDSItem.get(uri);
-		if (item != null) {
-			if (item instanceof OPDSCatalog) {
-				String msg = OPDSCreator.createFeed((OPDSCatalog)item, getIconAddress());
-				return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg);
+		uri = uri.substring(1);
+		LibraryTree tree = myRootTree.getLibraryTree(uri);
+		Log.e("SERVER", uri);
+		if (tree != null) {
+			Log.d("TREE", tree.toString());
+			if (tree instanceof BookTree) {
+				String file = tree.getBook().File;
+				file = file.substring("file://".length());
+				int index = file.indexOf(":");
+				if (index != -1) {
+					file = file.substring(0, index);
+				}
+				Log.d("BOOK", file);
+				return serveFile(file, header, new File("/"), true);
 			}
-			if (item instanceof OPDSBook) {
-				return serveFile(uri, header, myRootDir, true);
-			}
+			String msg = OPDSCreator.createFeed(tree, getIconAddress());
+			return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg);
 		}
+		
 		return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_PLAINTEXT, "404");
 	}
 
 	public void stop() {
-		unexpose();
+//		unexpose();
 		super.stop();
 	}
 

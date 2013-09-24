@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2012 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2013 Geometer Plus <contact@geometerplus.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,34 +17,31 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbreader.libraryService;
+package org.geometerplus.fbreader.book;
 
-import android.os.Parcelable;
-import android.os.Parcel;
+public class UID {
+	public final String Type;
+	public final String Id;
 
-public class BookObject implements Parcelable {
-	public final String Path;
-
-	BookObject(String path) {
-		Path = path;
+	public UID(String type, String id) {
+		Type = type;
+		Id = id.trim();
 	}
 
-	public void writeToParcel(Parcel parcel, int flags) {
-		parcel.writeString(Path);
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof UID)) {
+			return false;
+		}
+		final UID u = (UID)o;
+		return Type.equals(u.Type) && Id.equals(u.Id);
 	}
 
-	public int describeContents() {
-		return 0;
+	@Override
+	public int hashCode() {
+		return Type.hashCode() + Id.hashCode();
 	}
-
-	public static final Parcelable.Creator<BookObject> CREATOR =
-		new Parcelable.Creator<BookObject>() {
-			public BookObject createFromParcel(Parcel parcel) {
-				return new BookObject(parcel.readString());
-			}
-
-			public BookObject[] newArray(int size) {
-				return new BookObject[size];
-			}
-		};
 }

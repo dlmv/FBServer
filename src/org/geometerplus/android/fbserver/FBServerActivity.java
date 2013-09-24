@@ -55,7 +55,7 @@ public class FBServerActivity extends Activity {
 	final static String STOPPING = "service_stopping";
 
 	private boolean isMyServiceRunning() {
-		if (FBServerService.exists) {
+		if (FBServerService.Instance != null) {
 			return true;
 		}
 		ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2012 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2013 Geometer Plus <contact@geometerplus.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,34 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbreader.libraryService;
+package org.geometerplus.fbreader.book;
 
-parcelable BookObject;
+public final class BookmarkQuery {
+	public final Book Book;
+	public final boolean Visible;
+	public final int Limit;
+	public final int Page;
+
+	public BookmarkQuery(int limit) {
+		this(null, limit);
+	}
+
+	public BookmarkQuery(Book book, int limit) {
+		this(book, true, limit);
+	}
+
+	public BookmarkQuery(Book book, boolean visible, int limit) {
+		this(book, visible, limit, 0);
+	}
+
+	BookmarkQuery(Book book, boolean visible, int limit, int page) {
+		Book = book;
+		Visible = visible;
+		Limit = limit;
+		Page = page;
+	}
+
+	public BookmarkQuery next() {
+		return new BookmarkQuery(Book, Visible, Limit, Page + 1);
+	}
+}

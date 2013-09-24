@@ -22,8 +22,11 @@ package org.geometerplus.android.fbserver.opds;
 import android.content.res.AssetManager;
 import android.content.Context;
 
-import java.util.*;
 import java.io.*;
+
+import org.geometerplus.fbreader.library.BookTree;
+import org.geometerplus.fbreader.library.LibraryTree;
+import org.geometerplus.fbreader.tree.FBTree;
 
 public abstract class OPDSCreator {
 
@@ -53,32 +56,52 @@ public abstract class OPDSCreator {
 		}
 	}
 
-	static String createFeed(OPDSCatalog o, String iconUrl) {
+	static String createFeed(LibraryTree o, String iconUrl) {
 		String entries = "";
-		for (OPDSItem i : o.getChildren()) {
-			entries = entries + i.getEntry();
+		for (FBTree i : o.subTrees()) {
+			entries = entries + createEntry(i);
 		}
 		return ourFeedTemplate
-			.replace("%ID%", o.Id)
-			.replace("%TITLE%", o.Title)
-			.replace("%START%", OPDSServer.ROOT_URL)
-			.replace("%ICON%", iconUrl)
-			.replace("%ENTRIES%", entries);
+				.replace("%ID%", o.getUniqueKey().toString())
+				.replace("%TITLE%", o.getName())
+				.replace("%START%", OPDSServer.ROOT_URL)
+				.replace("%ICON%", iconUrl)
+				.replace("%ENTRIES%", entries);
 	}
 
-	static String createEntry(OPDSBook o) {
+	static String createEntry(FBTree o) {
+		if (o instanceof LibraryTree) {
+			if (o instanceof BookTree) {
+				return createBookEntry((BookTree) o);
+			}
+			return createCatalogEntry((LibraryTree) o);
+		}
+		return "";
+	}
+
+	static String createBookEntry(BookTree o) {
+		String link = o.getUniqueKey().toString();
+		if (o.Parent.Parent != null) {
+			String parent = o.Parent.Parent.getUniqueKey().toString();
+			link = link.substring(parent.length() + 1);
+		} 
 		return ourBookEntryTemplate
-			.replace("%ID%", o.Id)
-			.replace("%TITLE%", o.Title)
-			.replace("%LINK%", o.Id)
-			.replace("%TYPE%", o.getType());
+				.replace("%ID%", o.getUniqueKey().toString())
+				.replace("%TITLE%", o.getName())
+				.replace("%LINK%", link)
+				.replace("%TYPE%", "fchjfgkjgh");//TODO
 	}
 
-	static String createEntry(OPDSCatalog o) {
+	static String createCatalogEntry(LibraryTree o) {
+		String link = o.getUniqueKey().toString();
+		if (o.Parent.Parent != null) {
+			String parent = o.Parent.Parent.getUniqueKey().toString();
+			link = link.substring(parent.length() + 1);
+		} 
 		return ourCatalogEntryTemplate
-			.replace("%ID%", o.Id)
-			.replace("%TITLE%", o.Title)
-			.replace("%LINK%", o.Id);
+				.replace("%ID%", o.getUniqueKey().toString())
+				.replace("%TITLE%", o.getName())
+				.replace("%LINK%", link);
 	}
 
 }

@@ -1,17 +1,7 @@
 package nanohttpd;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URLEncoder;
+import java.io.*;
+import java.net.*;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Vector;
@@ -674,7 +664,21 @@ public class NanoHTTPD
 		 * Decodes the percent encoding scheme. <br/>
 		 * For example: "an+example%20string" -> "an example string"
 		 */
-		private String decodePercent( String str ) throws InterruptedException
+		
+		private String decodePercent( String str ) {
+			return str;
+		}
+		
+		private String decodePercentUTF( String str ) {
+			try {
+				return URLDecoder.decode(str, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+				return str;
+			}
+		}
+		
+		private String decodePercentOld( String str ) throws InterruptedException
 		{
 			try
 			{

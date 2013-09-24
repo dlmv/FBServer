@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2012 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2013 Geometer Plus <contact@geometerplus.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,32 +17,24 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbserver.opds;
+package org.geometerplus.fbreader.book;
 
-import java.util.*;
+public class Query {
+	final Filter Filter;
+	final int Limit;
+	final int Page;
 
-public class OPDSCatalog extends OPDSItem {
-
-	private ArrayList<OPDSItem> myChildren = new ArrayList<OPDSItem>();
-
-	public OPDSCatalog(String id, String title) {
-		super(id, title);
+	public Query(Filter filter, int limit) {
+		this(filter, limit, 0);
 	}
 
-	public void setChildren(List<OPDSItem> ch) {
-		myChildren = new ArrayList(ch);
+	Query(Filter filter, int limit, int page) {
+		Filter = filter;
+		Limit = limit;
+		Page = page;
 	}
 
-	public void addChild(OPDSItem ch) {
-		myChildren.add(ch);
+	public Query next() {
+		return new Query(Filter, Limit, Page + 1);
 	}
-
-	public List<OPDSItem> getChildren() {
-		return myChildren;
-	}
-
-	protected String getEntry() {
-		return OPDSCreator.createEntry(this);
-	}
-
 }

@@ -1,28 +1,53 @@
 /*
- * Copyright (C) 2010-2012 Geometer Plus <contact@geometerplus.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
+ * This code is in the public domain.
  */
 
 package org.geometerplus.android.fbreader.libraryService;
 
-import org.geometerplus.android.fbreader.libraryService.BookObject;
+import java.util.List;
+import org.geometerplus.android.fbreader.api.TextPosition;
 
 interface LibraryInterface {
-	boolean isUpToDate();
-	BookObject getBookByFile(String path);
-	BookObject getRecentBook();
+	void reset(in List<String> bookDirectories, in boolean force);
+
+	String status();
+
+	int size();
+	List<String> books(in String query);
+	boolean hasBooks(in String query);
+
+	List<String> recentBooks();
+
+	String getBookByFile(in String file);
+	String getBookById(in long id);
+	String getBookByUid(in String type, in String id);
+	String getRecentBook(in int index);
+
+	List<String> authors();
+	boolean hasSeries();
+	List<String> series();
+	List<String> tags();
+	List<String> labels();
+	List<String> titles(in String query);
+	List<String> firstTitleLetters();
+
+	boolean saveBook(in String book, in boolean force);
+	void removeBook(in String book, in boolean deleteFromDisk);
+	void addBookToRecentList(in String book);
+
+	TextPosition getStoredPosition(in long bookId);
+	void storePosition(in long bookId, in TextPosition position);
+
+	boolean isHyperlinkVisited(in String book, in String linkId);
+	void markHyperlinkAsVisited(in String book, in String linkId);
+	
+	boolean saveCover(in String book, in String url);
+
+	List<String> bookmarks(in String query);
+	String saveBookmark(in String bookmark);
+	void deleteBookmark(in String bookmark);
+
+	String getHighlightingStyle(in int styleId);
+	List<String> highlightingStyles();
+	void saveHighlightingStyle(in String style);
 }
