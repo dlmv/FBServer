@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
  <feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/terms/" xmlns:opds="http://opds-spec.org/2010/catalog">
  <id>%ID%</id>
-<icon>%ICON%</icon>
+ <icon>%ICON%</icon>
  <title>%TITLE%</title>
  <link href="%START%" rel="start" type="application/atom+xml;profile=opds-catalog" />
+ <link href="/search?searchTerm={searchTerms}" rel="search" type="application/atom+xml" />
 %ENTRIES%
  </feed>

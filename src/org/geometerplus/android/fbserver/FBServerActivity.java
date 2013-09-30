@@ -30,22 +30,22 @@ public class FBServerActivity extends Activity {
 	private Button myStartButton;
 	private Button myStopButton;
 	private EditText myPortEdit;
-	private EditText myNameEdit;
+	private EditText myIpEdit;
 
+
+	private String myIp = "Not connected";
 	private String myPort;
-	private String myName;
 
 	private ProgressDialog myProgress;
 	private Handler myHandler = new Handler() {
-			public void handleMessage(Message message) {
-				if (message.what == 1) {
-					myPort = "8080";
-					myName = "FBReader Library";
-					changeState(STOPPED);
-				}
-				myProgress.dismiss();
+		public void handleMessage(Message message) {
+			if (message.what == 1) {
+				myPort = "8080";
+				changeState(STOPPED);
 			}
-		};
+			myProgress.dismiss();
+		}
+	};
 
 	final static String STARTED = "service_start";
 	final static String STOPPED = "service_stop";
@@ -69,7 +69,12 @@ public class FBServerActivity extends Activity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			myPort = intent.getStringExtra(FBServerService.PORT);
-			myName = intent.getStringExtra(FBServerService.NAME);
+			String ip = intent.getStringExtra(FBServerService.IP);
+			if (ip != null) {
+				myIp = ip;
+			} else {
+				myIp = "Not connected";
+			}
 			changeState(intent.getAction());
 		}
 	}
@@ -79,9 +84,8 @@ public class FBServerActivity extends Activity {
 			myStartButton.setEnabled(false);
 			myStopButton.setEnabled(true);
 			myPortEdit.setText(myPort);
-			myNameEdit.setText(myName);
 			myPortEdit.setFocusable(false);
-			myNameEdit.setFocusable(false);
+			myIpEdit.setText(myIp);
 			synchronized(FBServerActivity.this) {
 				FBServerActivity.this.notify();
 			}
@@ -90,9 +94,8 @@ public class FBServerActivity extends Activity {
 			myStartButton.setEnabled(true);
 			myStopButton.setEnabled(false);
 			myPortEdit.setText(myPort);
-			myNameEdit.setText(myName);
+			myIpEdit.setText(myIp);
 			myPortEdit.setFocusableInTouchMode(true);
-			myNameEdit.setFocusableInTouchMode(true);
 			synchronized(FBServerActivity.this) {
 				FBServerActivity.this.notify();
 			}
@@ -101,15 +104,13 @@ public class FBServerActivity extends Activity {
 			myStartButton.setEnabled(false);
 			myStopButton.setEnabled(false);
 			myPortEdit.setFocusable(false);
-			myNameEdit.setFocusable(false);
 		}
 		if (state.equals(STOPPING)) {
 			myStartButton.setEnabled(false);
 			myStopButton.setEnabled(false);
+			myIpEdit.setText(myIp);
 			myPortEdit.setText(myPort);
-			myNameEdit.setText(myName);
 			myPortEdit.setFocusable(false);
-			myNameEdit.setFocusable(false);
 		}
 	}
 
@@ -159,7 +160,6 @@ public class FBServerActivity extends Activity {
 			public void onClick(View view) {
 				Intent startIntent = new Intent(FBServerActivity.this, FBServerService.class);
 				startIntent.putExtra(FBServerService.PORT, myPortEdit.getText().toString());
-				startIntent.putExtra(FBServerService.NAME, myNameEdit.getText().toString());
 				startService(startIntent);
 				waitForResponse("Please, wait...", "Starting");
 			}
@@ -175,14 +175,13 @@ public class FBServerActivity extends Activity {
 			}
 		});
 
+		myIpEdit = (EditText)findViewById(R.id.ip);
+
+		myIpEdit.setFocusable(false);
+
 		final TextView portLabel = (TextView)findViewById(R.id.port_label);
 		portLabel.setText("Port:");
 		myPortEdit = (EditText)findViewById(R.id.port);
-
-		final TextView nameLabel = (TextView)findViewById(R.id.name_label);
-		nameLabel.setText("Name:");
-		myNameEdit = (EditText)findViewById(R.id.name);
-
 		myDataUpdateReceiver = new DataUpdateReceiver();
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(STARTED);

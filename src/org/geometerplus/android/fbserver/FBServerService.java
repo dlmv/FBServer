@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import org.geometerplus.android.fbserver.opds.*;
 import org.geometerplus.android.fbreader.api.ApiClientImplementation;
+import org.geometerplus.android.fbreader.api.ApiException;
 import org.geometerplus.android.fbreader.libraryService.*;
 import org.geometerplus.fbserver.book.*;
 import org.geometerplus.fbserver.book.IBookCollection.Status;
@@ -42,7 +43,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	static FBServerService Instance = null;
 
 	final static String PORT = "server_port";
-	final static String NAME = "server_name";
+	final static String IP = "server_ip";
 
 	final static String ASK_STATE = "ask_state";
 
@@ -55,7 +56,6 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	private int myState;
 
 	private int myPort;
-	private String myName = "";
 	private String myError = "";
 	
 	private RootTree myRootTree;
@@ -64,7 +64,9 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 		public void handleMessage (Message msg) {
 			Intent i = new Intent();
 			i.putExtra(PORT, Integer.toString(myPort));
-			i.putExtra(NAME, myName);
+			if (myServer != null) {
+				i.putExtra(IP, myServer.getIp());
+			}
 			switch (myState) {
 			case STATE_STARTED:
 				Toast.makeText(getApplicationContext(), "Server is running on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
@@ -134,10 +136,8 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 			public void run () {
 				try {
 					String portStr = intent.getStringExtra(PORT);
-					myName = intent.getStringExtra(NAME);
 					myPort = Integer.parseInt(portStr);
-					final int port = myPort;
-					myServer = new OPDSServer(port, myName, FBServerService.this);
+					myServer = new OPDSServer(myPort, FBServerService.this, myCollection);
 				} catch (Exception e) {
 					myError = e.getMessage();
 					myState = STATE_FAILED;
@@ -217,18 +217,27 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 
 	void setBuildStatus(Status status) {
 		myBuildStatus = status;
-		tryToGetBooks();
+		tryToInit();
 	}
 
-	void tryToGetBooks() {
+	void tryToInit() {
 		if (myFullyInited()) {
-			getBooks();
+			init();
 			myState = STATE_STARTED;
 			myHandler.sendEmptyMessage(0);
 		}
 	}
 
-	private void getBooks() {
+	private void init() {
+		String name;
+		try {
+			name = ZLResource.Api.getResourceValue("library");
+		} catch (ApiException e) {
+			e.printStackTrace();
+			name = "FBReader Library";
+		}
+//		myServer.expose(name);
+		
 		myRootTree.init();
 	}
 
@@ -236,6 +245,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	public void onBookEvent(BookEvent event, Book book) {
 		if (myFullyInited()) {
 			myRootTree.onBookEvent(event, book);
+			myServer.clearCache();
 		}
 	}
 

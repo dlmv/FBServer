@@ -28,9 +28,9 @@ public class SearchResultsTree extends FilteredTree {
 	private final String myId;
 	private final ZLResource myResource;
 
-	SearchResultsTree(IBookCollection collection, String id, String pattern) {
+	SearchResultsTree(IBookCollection collection, String pattern) {
 		super(collection, new Filter.ByPattern(pattern));
-		myId = id;
+		myId = ROOT_FOUND;
 		myResource = resource().getResource(myId);
 		Pattern = pattern != null ? pattern : "";
 	}

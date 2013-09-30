@@ -11,19 +11,6 @@
 		android:orientation="vertical"
 	>
 		<TextView
-			android:id="@+id/name_label"
-			android:layout_width="fill_parent"
-			android:layout_height="wrap_content"
-			android:singleLine="true"
-		/>
-		<EditText
-			android:id="@+id/name"
-			android:layout_width="fill_parent"
-			android:layout_height="wrap_content"
-			android:singleLine="true"
-			android:windowSoftInputMode="stateHidden"
-		/>
-		<TextView
 			android:id="@+id/port_label"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
@@ -37,6 +24,23 @@
 			android:inputType="number"
 			android:windowSoftInputMode="stateHidden"
 		/>
+		
+		<TextView
+            android:id="@+id/ip_label"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:text="Ip:" />
+
+        <EditText
+            android:id="@+id/ip"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:inputType="none"
+            android:singleLine="true"
+            android:windowSoftInputMode="stateHidden" />
+		
 		<include layout="@layout/ok_cancel_buttons" android:id="@+id/start_stop_buttons" />
 	</LinearLayout>
 </ScrollView>

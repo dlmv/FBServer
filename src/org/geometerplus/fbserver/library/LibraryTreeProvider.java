@@ -79,6 +79,10 @@ public abstract class LibraryTreeProvider {
 		return getTreeInternal(t);
 	}
 
-
+	public static LibraryTree getSearchResultsTree(IBookCollection collection, String pattern) {
+		SearchResultsTree t = new SearchResultsTree(collection, pattern);
+		t.waitForOpening();
+		return t;
+	}
 
 }

@@ -26,6 +26,7 @@ import android.os.*;
 
 import javax.jmdns.*;
 
+import org.geometerplus.fbserver.book.IBookCollection;
 import org.geometerplus.fbserver.library.*;
 
 import android.net.wifi.WifiManager;
@@ -49,26 +50,33 @@ public class OPDSServer extends NanoHTTPD {
 	private static final String ICON_FILE = "fbreader.png";
 
 	private final int myPort;
-	private final String myName;
 
 	private WifiManager.MulticastLock myLock = null;
 	private ArrayList<JmDNS> myJmDNSes = new ArrayList<JmDNS>();
 	private Context myContext;
+	
+	private final IBookCollection myCollection;
 
-	public OPDSServer(int port, String name, Context context) throws IOException {
+	private final HashMap<String, String> myCache = new HashMap<String, String>();
+
+	public void clearCache() {
+		myCache.clear();
+	}
+
+	public OPDSServer(int port, Context context, IBookCollection col) throws IOException {
 		super(port, Environment.getRootDirectory());
 		myContext = context;
 		myPort = port;
-		myName = name;
-//		expose();
+		myCollection = col;
+		//		expose();
 		OPDSCreator.init(context);
 	}
 
 	public String getIconAddress() {
-		return "http://" + myIp + ":" + Integer.toString(myPort) + ICON_URL;
+		return ICON_URL;
 	}
 
-	private void expose() throws IOException {
+	public void expose(String name) throws IOException {
 		final WifiManager wifiManager = (WifiManager)myContext.getSystemService(Context.WIFI_SERVICE);
 		myLock = wifiManager.createMulticastLock("FBServer_lock");
 		myLock.setReferenceCounted(true);
@@ -81,7 +89,7 @@ public class OPDSServer extends NanoHTTPD {
 				myJmDNSes.add(mcDNS);
 				Hashtable<String, String> props = new Hashtable<String, String>();
 				props.put("path", ROOT_URL);
-				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", myName, myPort, 0, 0, props);
+				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", name, myPort, 0, 0, props);
 				mcDNS.registerService(serviceInfo);
 			}
 		}
@@ -101,37 +109,58 @@ public class OPDSServer extends NanoHTTPD {
 		myJmDNSes = null;
 	}
 
+	public String getIp() {
+		if (getLocalIpAddresses().size() > 0) {
+			return getLocalIpAddresses().get(0).getHostAddress();
+		}
+		return "Not connected";
+	}
+
 	public Response serve(String uri, String method, Properties header, Properties parms, Properties files) {
-		if (uri.equals(ICON_URL)) {
-			try {
-				return new Response(HTTP_OK, "image/png", myContext.getAssets().open(ICON_FILE));
-			} catch (IOException e) {
-			}
-		}
-		uri = uri.substring(1);
-		LibraryTree tree = LibraryTreeProvider.getTreeById(uri);
-		Log.e("SERVER", uri);
-		if (tree != null) {
-			Log.d("TREE", tree.toString());
-			if (tree instanceof BookTree) {
-				String file = tree.getBook().File;
-				file = file.substring("file://".length());
-				int index = file.indexOf(":");
-				if (index != -1) {
-					file = file.substring(0, index);
+		try {
+			if (uri.equals(ICON_URL)) {
+				try {
+					return new Response(HTTP_OK, "image/png", myContext.getAssets().open(ICON_FILE));
+				} catch (IOException e) {
 				}
-				Log.d("BOOK", file);
-				return serveFile(file, header, new File("/"), true);
 			}
-			String msg = OPDSCreator.createFeed(tree, getIconAddress());
-			return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, msg);
+			uri = uri.substring(1);
+
+			if ("search".equals(uri)) {
+				String request = (String) parms.get("searchTerm");
+				LibraryTree tree = LibraryTreeProvider.getSearchResultsTree(myCollection, request);
+				String res = OPDSCreator.createFeed(tree, getIconAddress());
+				return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, res);
+			}
+
+			if (myCache.containsKey(uri)) {
+				return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, myCache.get(uri));
+			} else {
+				LibraryTree tree = LibraryTreeProvider.getTreeById(uri);
+				Log.e("SERVER", uri);
+				if (tree != null) {
+					if (tree instanceof BookTree) {
+						String file = tree.getBook().File;
+						file = file.substring("file://".length());
+						int index = file.indexOf(":");
+						if (index != -1) {
+							file = file.substring(0, index);
+						}
+						return serveFile(file, header, new File("/"), true);
+					}
+					String res = OPDSCreator.createFeed(tree, getIconAddress());
+					return new NanoHTTPD.Response(HTTP_OK, MIME_HTML, res);
+				}
+			}
+
+			return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_PLAINTEXT, "404");
+		} catch (Throwable t) {
+			return new NanoHTTPD.Response(HTTP_INTERNALERROR, MIME_PLAINTEXT, "500");
 		}
-		
-		return new NanoHTTPD.Response(HTTP_NOTFOUND, MIME_PLAINTEXT, "404");
 	}
 
 	public void stop() {
-//		unexpose();
+		//		unexpose();
 		super.stop();
 	}
 

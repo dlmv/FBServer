@@ -3,7 +3,7 @@
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
 	<application android:label="FBServer">
-		<activity android:name=".FBServerActivity" android:label="FBServer" android:launchMode="singleInstance" android:configChanges="orientation|keyboardHidden">
+		<activity android:name=".FBServerActivity" android:label="FBServer" android:launchMode="singleInstance" android:configChanges="orientation|keyboardHidden" android:theme="@android:style/Theme.Dialog">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
