@@ -17,35 +17,34 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbreader.libraryService;
+package org.geometerplus.fbserver.book;
 
-import org.geometerplus.fbserver.book.Author;
-import org.geometerplus.fbserver.book.Tag;
+public final class BookmarkQuery {
+	public final Book Book;
+	public final boolean Visible;
+	public final int Limit;
+	public final int Page;
 
-abstract class Util {
-	static String authorToString(Author author) {
-		return new StringBuilder(author.DisplayName).append('\000').append(author.SortKey).toString();
+	public BookmarkQuery(int limit) {
+		this(null, limit);
 	}
 
-	static Author stringToAuthor(String string) {
-		final String[] splitted = string.split("\000");
-		if (splitted.length == 2) {
-			return new Author(splitted[0], splitted[1]);
-		} else {
-			return Author.NULL;
-		}
+	public BookmarkQuery(Book book, int limit) {
+		this(book, true, limit);
 	}
 
-	static String tagToString(Tag tag) {
-		return tag.toString("\000");
+	public BookmarkQuery(Book book, boolean visible, int limit) {
+		this(book, visible, limit, 0);
 	}
 
-	static Tag stringToTag(String string) {
-		final String[] splitted = string.split("\000");
-		if (splitted.length > 0) {
-			return Tag.getTag(splitted);
-		} else {
-			return Tag.NULL;
-		}
+	BookmarkQuery(Book book, boolean visible, int limit, int page) {
+		Book = book;
+		Visible = visible;
+		Limit = limit;
+		Page = page;
+	}
+
+	public BookmarkQuery next() {
+		return new BookmarkQuery(Book, Visible, Limit, Page + 1);
 	}
 }

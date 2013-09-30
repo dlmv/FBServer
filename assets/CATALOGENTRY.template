@@ -1,6 +1,7 @@
  <entry>
   <id>%ID%</id>
   <title>%TITLE%</title>
+  <content type="text">%SUMMARY%</content>
   <link href="%LINK%" type="application/atom+xml;profile=opds-catalog" />
  </entry>
 

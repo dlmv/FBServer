@@ -17,35 +17,31 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.android.fbreader.libraryService;
+package org.geometerplus.fbserver.book;
 
-import org.geometerplus.fbserver.book.Author;
-import org.geometerplus.fbserver.book.Tag;
+public class UID {
+	public final String Type;
+	public final String Id;
 
-abstract class Util {
-	static String authorToString(Author author) {
-		return new StringBuilder(author.DisplayName).append('\000').append(author.SortKey).toString();
+	public UID(String type, String id) {
+		Type = type;
+		Id = id.trim();
 	}
 
-	static Author stringToAuthor(String string) {
-		final String[] splitted = string.split("\000");
-		if (splitted.length == 2) {
-			return new Author(splitted[0], splitted[1]);
-		} else {
-			return Author.NULL;
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
 		}
-	}
-
-	static String tagToString(Tag tag) {
-		return tag.toString("\000");
-	}
-
-	static Tag stringToTag(String string) {
-		final String[] splitted = string.split("\000");
-		if (splitted.length > 0) {
-			return Tag.getTag(splitted);
-		} else {
-			return Tag.NULL;
+		if (!(o instanceof UID)) {
+			return false;
 		}
+		final UID u = (UID)o;
+		return Type.equals(u.Type) && Id.equals(u.Id);
+	}
+
+	@Override
+	public int hashCode() {
+		return Type.hashCode() + Id.hashCode();
 	}
 }

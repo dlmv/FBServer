@@ -33,7 +33,7 @@ import org.geometerplus.zlibrary.text.view.ZLTextPosition;
 
 import org.geometerplus.android.fbreader.api.TextPosition;
 //import org.geometerplus.fbreader.Paths;
-import org.geometerplus.fbreader.book.*;
+import org.geometerplus.fbserver.book.*;
 
 public class BookCollectionShadow extends AbstractBookCollection implements ServiceConnection {
 	static final String BOOK_EVENT_ACTION = "fbreader.library-service.book-event";

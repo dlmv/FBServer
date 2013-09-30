@@ -26,10 +26,13 @@ import android.util.Log;
 import android.widget.Toast;
 
 import org.geometerplus.android.fbserver.opds.*;
+import org.geometerplus.android.fbreader.api.ApiClientImplementation;
 import org.geometerplus.android.fbreader.libraryService.*;
-import org.geometerplus.fbreader.book.*;
-import org.geometerplus.fbreader.book.IBookCollection.Status;
-import org.geometerplus.fbreader.library.RootTree;
+import org.geometerplus.fbserver.book.*;
+import org.geometerplus.fbserver.book.IBookCollection.Status;
+import org.geometerplus.fbserver.library.LibraryTreeProvider;
+import org.geometerplus.fbserver.library.RootTree;
+import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 
 public class FBServerService extends Service implements BookCollectionShadow.Listener {
@@ -56,7 +59,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	private String myError = "";
 	
 	private RootTree myRootTree;
-
+	
 	final Handler myHandler = new Handler() {
 		public void handleMessage (Message msg) {
 			Intent i = new Intent();
@@ -113,7 +116,15 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 				setBuildStatus(myCollection.status());
 			}
 		});
-		myRootTree = new RootTree(myCollection);
+		
+		ZLResource.Api = new ApiClientImplementation(this, new  ApiClientImplementation.ConnectionListener() {
+			@Override
+			public void onConnected() {
+				ZLResource.ConnectedToApi = true;
+			}
+		});
+		ZLResource.Api.connect();
+		myRootTree = (RootTree) LibraryTreeProvider.getRootTree(myCollection);
 		
 	}
 
@@ -126,7 +137,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 					myName = intent.getStringExtra(NAME);
 					myPort = Integer.parseInt(portStr);
 					final int port = myPort;
-					myServer = new OPDSServer(port, myName, FBServerService.this, myRootTree);
+					myServer = new OPDSServer(port, myName, FBServerService.this);
 				} catch (Exception e) {
 					myError = e.getMessage();
 					myState = STATE_FAILED;
@@ -161,6 +172,10 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 			unregisterReceiver(myMessageReceiver);
 		}
 		((BookCollectionShadow)myCollection).unbind();
+		if (ZLResource.ConnectedToApi) {
+			ZLResource.Api.disconnect();
+			ZLResource.ConnectedToApi = false;
+		}
 		super.onDestroy();
 	}
 
@@ -194,6 +209,11 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	private MessageReceiver myMessageReceiver;
 
 	private Status myBuildStatus = Status.NotStarted;
+	
+	
+	private boolean myFullyInited() {
+		return Status.Succeeded.equals(myBuildStatus) && ZLResource.ConnectedToApi;
+	}
 
 	void setBuildStatus(Status status) {
 		myBuildStatus = status;
@@ -201,7 +221,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	}
 
 	void tryToGetBooks() {
-		if (Status.Succeeded.equals(myBuildStatus)) {
+		if (myFullyInited()) {
 			getBooks();
 			myState = STATE_STARTED;
 			myHandler.sendEmptyMessage(0);
@@ -209,31 +229,14 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	}
 
 	private void getBooks() {
-//		OPDSCatalog root = new OPDSCatalog(OPDSServer.ROOT_URL, myName);
-//		OPDSItem.save(root);
-//		try {
-//			int LIMIT = 20;
-//			boolean end = false;
-//			BookQuery query = new BookQuery(new Filter.Empty(), LIMIT);
-//			while (!end) {
-//				List<Book> books = myCollection.books(query);
-//				if (books.isEmpty()) {
-//					end = true;
-//				} else {
-//					query = query.next();
-//					for (Book b : books) {
-//						Log.e("BOOK", b.getTitle());
-//					}
-//				}
-//			}
-//		} catch (Exception e) {
-//			e.printStackTrace(System.err);
-//		}
+		myRootTree.init();
 	}
 
 	@Override
 	public void onBookEvent(BookEvent event, Book book) {
-		myRootTree.onBookEvent(event, book);
+		if (myFullyInited()) {
+			myRootTree.onBookEvent(event, book);
+		}
 	}
 
 	@Override

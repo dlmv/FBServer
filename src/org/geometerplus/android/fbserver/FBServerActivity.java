@@ -25,8 +25,6 @@ import android.os.*;
 import android.view.View;
 import android.widget.*;
 
-import android.util.Log;
-
 public class FBServerActivity extends Activity {
 
 	private Button myStartButton;

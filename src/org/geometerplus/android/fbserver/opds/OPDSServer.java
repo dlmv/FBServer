@@ -26,7 +26,7 @@ import android.os.*;
 
 import javax.jmdns.*;
 
-import org.geometerplus.fbreader.library.*;
+import org.geometerplus.fbserver.library.*;
 
 import android.net.wifi.WifiManager;
 import android.content.Context;
@@ -50,19 +50,16 @@ public class OPDSServer extends NanoHTTPD {
 
 	private final int myPort;
 	private final String myName;
-	private final RootTree myRootTree;
 
 	private WifiManager.MulticastLock myLock = null;
 	private ArrayList<JmDNS> myJmDNSes = new ArrayList<JmDNS>();
 	private Context myContext;
 
-	public OPDSServer(int port, String name, Context context, RootTree root) throws IOException {
+	public OPDSServer(int port, String name, Context context) throws IOException {
 		super(port, Environment.getRootDirectory());
 		myContext = context;
 		myPort = port;
 		myName = name;
-		myRootTree = root;
-		
 //		expose();
 		OPDSCreator.init(context);
 	}
@@ -112,7 +109,7 @@ public class OPDSServer extends NanoHTTPD {
 			}
 		}
 		uri = uri.substring(1);
-		LibraryTree tree = myRootTree.getLibraryTree(uri);
+		LibraryTree tree = LibraryTreeProvider.getTreeById(uri);
 		Log.e("SERVER", uri);
 		if (tree != null) {
 			Log.d("TREE", tree.toString());

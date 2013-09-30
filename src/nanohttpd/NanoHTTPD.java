@@ -666,7 +666,7 @@ public class NanoHTTPD
 		 */
 		
 		private String decodePercent( String str ) {
-			return str;
+			return decodePercentUTF(str);
 		}
 		
 		private String decodePercentUTF( String str ) {

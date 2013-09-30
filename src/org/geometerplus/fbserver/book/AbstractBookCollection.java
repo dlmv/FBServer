@@ -17,42 +17,40 @@
  * 02110-1301, USA.
  */
 
-package org.geometerplus.zlibrary.core.resources;
+package org.geometerplus.fbserver.book;
 
-import org.geometerplus.android.fbreader.api.ApiClientImplementation;
-import org.geometerplus.android.fbreader.api.ApiException;
+import java.util.*;
 
-public class ZLResource {
-	public final String Name;
-	
-	public static ApiClientImplementation Api = null;
-	public static boolean ConnectedToApi = false;
-	
-	public static void connect() {
-		ConnectedToApi = true;
+public abstract class AbstractBookCollection implements IBookCollection {
+	private final List<Listener> myListeners = Collections.synchronizedList(new LinkedList<Listener>());
+
+	public void addListener(Listener listener) {
+		if (!myListeners.contains(listener)) {
+			myListeners.add(listener);
+		}
 	}
 
-	public static ZLResource resource(String key) {
-		return new ZLResource(key);
+	public void removeListener(Listener listener) {
+		myListeners.remove(listener);
 	}
 
-	protected ZLResource(String name) {
-		Name = name;
+	protected boolean hasListeners() {
+		return !myListeners.isEmpty();
 	}
 
-	public String getValue() {
-		if (ConnectedToApi) {
-			try {
-				return Api.getResourceValue(Name);
-			} catch (ApiException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+	protected void fireBookEvent(BookEvent event, Book book) {
+		synchronized (myListeners) {
+			for (Listener l : myListeners) {
+				l.onBookEvent(event, book);
 			}
 		}
-		return Name;
 	}
 
-	public ZLResource getResource(String key) {
-		return new ZLResource(Name + "/" + key);
+	protected void fireBuildEvent(Status status) {
+		synchronized (myListeners) {
+			for (Listener l : myListeners) {
+				l.onBuildEvent(status);
+			}
+		}
 	}
 }

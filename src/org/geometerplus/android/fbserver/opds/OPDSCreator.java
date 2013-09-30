@@ -24,9 +24,9 @@ import android.content.Context;
 
 import java.io.*;
 
-import org.geometerplus.fbreader.library.BookTree;
-import org.geometerplus.fbreader.library.LibraryTree;
-import org.geometerplus.fbreader.tree.FBTree;
+import org.geometerplus.fbserver.library.BookTree;
+import org.geometerplus.fbserver.library.LibraryTree;
+import org.geometerplus.fbserver.tree.FBTree;
 
 public abstract class OPDSCreator {
 
@@ -62,7 +62,7 @@ public abstract class OPDSCreator {
 			entries = entries + createEntry(i);
 		}
 		return ourFeedTemplate
-				.replace("%ID%", o.getUniqueKey().toString())
+				.replace("%ID%", o.getEncodedId())
 				.replace("%TITLE%", o.getName())
 				.replace("%START%", OPDSServer.ROOT_URL)
 				.replace("%ICON%", iconUrl)
@@ -80,28 +80,20 @@ public abstract class OPDSCreator {
 	}
 
 	static String createBookEntry(BookTree o) {
-		String link = o.getUniqueKey().toString();
-		if (o.Parent.Parent != null) {
-			String parent = o.Parent.Parent.getUniqueKey().toString();
-			link = link.substring(parent.length() + 1);
-		} 
 		return ourBookEntryTemplate
-				.replace("%ID%", o.getUniqueKey().toString())
+				.replace("%ID%",  o.getEncodedId())
 				.replace("%TITLE%", o.getName())
-				.replace("%LINK%", link)
+				.replace("%SUMMARY%", o.getSummary())
+				.replace("%LINK%",  "/" + o.getEncodedId())
 				.replace("%TYPE%", "fchjfgkjgh");//TODO
 	}
 
 	static String createCatalogEntry(LibraryTree o) {
-		String link = o.getUniqueKey().toString();
-		if (o.Parent.Parent != null) {
-			String parent = o.Parent.Parent.getUniqueKey().toString();
-			link = link.substring(parent.length() + 1);
-		} 
 		return ourCatalogEntryTemplate
-				.replace("%ID%", o.getUniqueKey().toString())
+				.replace("%ID%", o.getEncodedId())
 				.replace("%TITLE%", o.getName())
-				.replace("%LINK%", link);
+				.replace("%SUMMARY%", o.getSummary())
+				.replace("%LINK%", "/" + o.getEncodedId());
 	}
 
 }
