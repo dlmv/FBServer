@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="libraryName">FBReader library on</string>
+	<string name="start">Start</string>
+	<string name="stop">Stop</string>
+	<string name="wait">Please, wait…</string>
+	<string name="starting">Starting</string>
+	<string name="stopping">Stopping</string>
+	<string name="looking">Looking for running service</string>
+	<string name="name">Name:</string>
+	<string name="port">Port:</string>
+	<string name="ip">Ip:</string>
+	<string name="enterName">Enter Name</string>
+	<string name="wrongPort">Please use ports between 8000 and 65535</string>
+	<string name="running">FBServer is running on port:</string>
+	<string name="stopped">FBServer stopped</string>
+	<string name="notification">FBServer is running</string>
+</resources>

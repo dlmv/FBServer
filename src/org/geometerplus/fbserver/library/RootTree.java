@@ -21,12 +21,14 @@ package org.geometerplus.fbserver.library;
 
 import org.geometerplus.fbserver.book.IBookCollection;
 
-import android.util.Log;
 
 public class RootTree extends LibraryTree {
-	public RootTree(IBookCollection collection) {
+	
+	private String myName;
+	
+	public RootTree(IBookCollection collection, String name) {
 		super(collection);
-
+		myName = name;
 		addSubTree(LibraryTreeProvider.getAuthorListTree(Collection));
 		addSubTree(LibraryTreeProvider.getTitleListTree(Collection));
 		addSubTree(LibraryTreeProvider.getSeriesListTree(Collection));
@@ -39,7 +41,7 @@ public class RootTree extends LibraryTree {
 
 	@Override
 	public String getName() {
-		return resource().getValue();
+		return myName;
 	}
 
 	@Override

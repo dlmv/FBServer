@@ -40,7 +40,7 @@ public class FBServerActivity extends Activity {
 	
 	public static final String PREFS_NAME = "FBSPrefs";
 	public static final String PORT = "port";
-	public static final String NAME1 = "name";
+	public static final String NAME = "name";
 
 	private ProgressDialog myProgress;
 	private Handler myHandler = new Handler() {
@@ -48,7 +48,7 @@ public class FBServerActivity extends Activity {
 			if (message.what == 1) {
 				SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 				int port = settings.getInt(PORT, 8080);
-				myName = settings.getString(NAME1, "FBReader library on " + android.os.Build.MODEL);
+				myName = settings.getString(NAME, getResources().getString(R.string.libraryName) + " " + android.os.Build.MODEL);
 				myPort = Integer.toString(port);
 				changeState(STOPPED);
 			}
@@ -172,39 +172,39 @@ public class FBServerActivity extends Activity {
 		final View buttonView = findViewById(R.id.start_stop_buttons);
 
 		myStartButton = (Button)buttonView.findViewById(R.id.ok_button);
-		myStartButton.setText("Start");
+		myStartButton.setText(getResources().getString(R.string.start));
 		myStartButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				Intent startIntent = new Intent(FBServerActivity.this, FBServerService.class);
 				String name = myNameEdit.getText().toString();
 				int port = Integer.parseInt(myPortEdit.getText().toString());
 				if (name.equals("")) {
-					Toast.makeText(FBServerActivity.this, "Enter name", Toast.LENGTH_SHORT).show();
+					Toast.makeText(FBServerActivity.this, getResources().getString(R.string.enterName), Toast.LENGTH_SHORT).show();
 					return;
 				}
 				if (port < 8000 || port > 65535) {
-					Toast.makeText(FBServerActivity.this, "Please use ports between 8000 and 65535", Toast.LENGTH_SHORT).show();
+					Toast.makeText(FBServerActivity.this, getResources().getString(R.string.wrongPort), Toast.LENGTH_SHORT).show();
 					return;
 				}
 				SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 				SharedPreferences.Editor editor = settings.edit();
 				editor.putInt(PORT, port);
-				editor.putString(NAME1, name);
+				editor.putString(NAME, name);
 				editor.commit();
 				startIntent.putExtra(FBServerService.PORT, myPortEdit.getText().toString());
 				startIntent.putExtra(FBServerService.NAME, name);
 				startService(startIntent);
-				waitForResponse("Please, wait...", "Starting");
+				waitForResponse(getResources().getString(R.string.wait), getResources().getString(R.string.starting));
 			}
 		});
 
 		myStopButton = (Button)buttonView.findViewById(R.id.cancel_button);
-		myStopButton.setText("Stop");
+		myStopButton.setText(getResources().getString(R.string.stop));
 		myStopButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				Intent startIntent = new Intent(FBServerActivity.this, FBServerService.class);
 				stopService(startIntent);
-				waitForResponse("Please, wait...", "Stopping");
+				waitForResponse(getResources().getString(R.string.wait), getResources().getString(R.string.stopping));
 			}
 		});
 
@@ -215,11 +215,11 @@ public class FBServerActivity extends Activity {
 
 		
 		final TextView nameLabel = (TextView)findViewById(R.id.name_label);
-		nameLabel.setText("Name:");
+		nameLabel.setText(getResources().getString(R.string.name));
 		final TextView portLabel = (TextView)findViewById(R.id.port_label);
-		portLabel.setText("Port:");
+		portLabel.setText(getResources().getString(R.string.port));
 		final TextView ipLabel = (TextView)findViewById(R.id.ip_label);
-		ipLabel.setText("Ip:");
+		ipLabel.setText(getResources().getString(R.string.ip));
 		myPortEdit = (EditText)findViewById(R.id.port);
 		myDataUpdateReceiver = new DataUpdateReceiver();
 		IntentFilter filter = new IntentFilter();
@@ -229,7 +229,7 @@ public class FBServerActivity extends Activity {
 		filter.addAction(STOPPING);
 		registerReceiver(myDataUpdateReceiver, filter);
 		sendBroadcast(new Intent(FBServerService.ASK_STATE));
-		waitForResponse("Please, wait...", "Looking for running service");
+		waitForResponse(getResources().getString(R.string.wait), getResources().getString(R.string.looking));
 	}
 
 	@Override

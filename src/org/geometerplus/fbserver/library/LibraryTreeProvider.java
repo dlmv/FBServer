@@ -29,8 +29,8 @@ public abstract class LibraryTreeProvider {
 
 	}
 
-	public static LibraryTree getRootTree(IBookCollection collection) {
-		RootTree t = new RootTree(collection);
+	public static LibraryTree getRootTree(IBookCollection collection, String name) {
+		RootTree t = new RootTree(collection, name);
 		return getTreeInternal(t);
 	}
 

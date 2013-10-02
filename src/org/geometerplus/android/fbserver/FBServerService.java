@@ -22,7 +22,6 @@ package org.geometerplus.android.fbserver;
 import android.app.*;
 import android.content.*;
 import android.os.*;
-import android.util.Log;
 import android.widget.Toast;
 
 import org.geometerplus.android.fbserver.opds.*;
@@ -71,7 +70,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 			}
 			switch (myState) {
 			case STATE_STARTED:
-				Toast.makeText(getApplicationContext(), "Server is running on port: " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
+				Toast.makeText(getApplicationContext(), getResources().getString(R.string.running) + " " + Integer.toString(myPort), Toast.LENGTH_SHORT).show();
 				i.setAction(FBServerActivity.STARTED);
 				sendBroadcast(i);
 				showNotification();
@@ -91,7 +90,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 				sendBroadcast(i);
 				break;
 			case STATE_STOPPED:
-				Toast.makeText(getApplicationContext(), "Server stopped", Toast.LENGTH_SHORT).show();
+				Toast.makeText(getApplicationContext(), getResources().getString(R.string.stopped), Toast.LENGTH_SHORT).show();
 				i.setAction(FBServerActivity.STOPPED);
 				sendBroadcast(i);
 				FBServerService.this.stopForeground(true);
@@ -128,7 +127,6 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 			}
 		});
 		ZLResource.Api.connect();
-		myRootTree = (RootTree) LibraryTreeProvider.getRootTree(myCollection);
 		
 	}
 
@@ -140,6 +138,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 					String portStr = intent.getStringExtra(PORT);
 					myPort = Integer.parseInt(portStr);
 					myName = intent.getStringExtra(NAME);
+					myRootTree = (RootTree) LibraryTreeProvider.getRootTree(myCollection, myName);
 					myServer = new OPDSServer(myPort, myName, FBServerService.this, myCollection);
 				} catch (Exception e) {
 					myError = e.getMessage();
@@ -187,15 +186,15 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	}
 
 	private void showNotification() {
-		CharSequence text = "FBServer is running";
+		CharSequence text = getResources().getString(R.string.notification);
 		Notification notification = new Notification(android.R.drawable.star_on, text,
 				System.currentTimeMillis());
 		notification.flags = Notification.FLAG_ONGOING_EVENT;
 		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
 				new Intent(this, FBServerActivity.class), 0);
-		notification.setLatestEventInfo(this, "FBServer is running",
+		notification.setLatestEventInfo(this, text,
 				text, contentIntent);
-		this.startForeground(1, notification);
+		startForeground(1, notification);
 	}
 
 	private class MessageReceiver extends BroadcastReceiver {
@@ -232,15 +231,6 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	}
 
 	private void init() {
-		String name;
-		try {
-			name = ZLResource.Api.getResourceValue("library");
-		} catch (ApiException e) {
-			e.printStackTrace();
-			name = "FBReader Library";
-		}
-//		myServer.expose(name);
-		
 		myRootTree.init();
 	}
 
