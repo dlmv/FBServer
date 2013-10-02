@@ -30,17 +30,26 @@ public class FBServerActivity extends Activity {
 	private Button myStartButton;
 	private Button myStopButton;
 	private EditText myPortEdit;
+	private EditText myNameEdit;
 	private EditText myIpEdit;
 
 
 	private String myIp = "Not connected";
+	private String myName;
 	private String myPort;
+	
+	public static final String PREFS_NAME = "FBSPrefs";
+	public static final String PORT = "port";
+	public static final String NAME1 = "name";
 
 	private ProgressDialog myProgress;
 	private Handler myHandler = new Handler() {
 		public void handleMessage(Message message) {
 			if (message.what == 1) {
-				myPort = "8080";
+				SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+				int port = settings.getInt(PORT, 8080);
+				myName = settings.getString(NAME1, "FBReader library on " + android.os.Build.MODEL);
+				myPort = Integer.toString(port);
 				changeState(STOPPED);
 			}
 			myProgress.dismiss();
@@ -69,6 +78,7 @@ public class FBServerActivity extends Activity {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			myPort = intent.getStringExtra(FBServerService.PORT);
+			myName = intent.getStringExtra(FBServerService.NAME);
 			String ip = intent.getStringExtra(FBServerService.IP);
 			if (ip != null) {
 				myIp = ip;
@@ -85,6 +95,8 @@ public class FBServerActivity extends Activity {
 			myStopButton.setEnabled(true);
 			myPortEdit.setText(myPort);
 			myPortEdit.setFocusable(false);
+			myNameEdit.setText(myName);
+			myNameEdit.setFocusable(false);
 			myIpEdit.setText(myIp);
 			synchronized(FBServerActivity.this) {
 				FBServerActivity.this.notify();
@@ -95,7 +107,9 @@ public class FBServerActivity extends Activity {
 			myStopButton.setEnabled(false);
 			myPortEdit.setText(myPort);
 			myIpEdit.setText(myIp);
+			myNameEdit.setText(myName);
 			myPortEdit.setFocusableInTouchMode(true);
+			myNameEdit.setFocusableInTouchMode(true);
 			synchronized(FBServerActivity.this) {
 				FBServerActivity.this.notify();
 			}
@@ -104,6 +118,7 @@ public class FBServerActivity extends Activity {
 			myStartButton.setEnabled(false);
 			myStopButton.setEnabled(false);
 			myPortEdit.setFocusable(false);
+			myNameEdit.setFocusable(false);
 		}
 		if (state.equals(STOPPING)) {
 			myStartButton.setEnabled(false);
@@ -111,6 +126,8 @@ public class FBServerActivity extends Activity {
 			myIpEdit.setText(myIp);
 			myPortEdit.setText(myPort);
 			myPortEdit.setFocusable(false);
+			myNameEdit.setText(myName);
+			myNameEdit.setFocusable(false);
 		}
 	}
 
@@ -159,7 +176,23 @@ public class FBServerActivity extends Activity {
 		myStartButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View view) {
 				Intent startIntent = new Intent(FBServerActivity.this, FBServerService.class);
+				String name = myNameEdit.getText().toString();
+				int port = Integer.parseInt(myPortEdit.getText().toString());
+				if (name.equals("")) {
+					Toast.makeText(FBServerActivity.this, "Enter name", Toast.LENGTH_SHORT).show();
+					return;
+				}
+				if (port < 8000 || port > 65535) {
+					Toast.makeText(FBServerActivity.this, "Please use ports between 8000 and 65535", Toast.LENGTH_SHORT).show();
+					return;
+				}
+				SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+				SharedPreferences.Editor editor = settings.edit();
+				editor.putInt(PORT, port);
+				editor.putString(NAME1, name);
+				editor.commit();
 				startIntent.putExtra(FBServerService.PORT, myPortEdit.getText().toString());
+				startIntent.putExtra(FBServerService.NAME, name);
 				startService(startIntent);
 				waitForResponse("Please, wait...", "Starting");
 			}
@@ -176,11 +209,17 @@ public class FBServerActivity extends Activity {
 		});
 
 		myIpEdit = (EditText)findViewById(R.id.ip);
-
 		myIpEdit.setFocusable(false);
+		
+		myNameEdit = (EditText)findViewById(R.id.name);
 
+		
+		final TextView nameLabel = (TextView)findViewById(R.id.name_label);
+		nameLabel.setText("Name:");
 		final TextView portLabel = (TextView)findViewById(R.id.port_label);
 		portLabel.setText("Port:");
+		final TextView ipLabel = (TextView)findViewById(R.id.ip_label);
+		ipLabel.setText("Ip:");
 		myPortEdit = (EditText)findViewById(R.id.port);
 		myDataUpdateReceiver = new DataUpdateReceiver();
 		IntentFilter filter = new IntentFilter();

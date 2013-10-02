@@ -85,7 +85,7 @@ public abstract class OPDSCreator {
 				.replace("%TITLE%", o.getName())
 				.replace("%SUMMARY%", o.getSummary())
 				.replace("%LINK%",  "/" + o.getEncodedId())
-				.replace("%TYPE%", "fchjfgkjgh");//TODO
+				.replace("%TYPE%", o.getBook().MimeType);//TODO
 	}
 
 	static String createCatalogEntry(LibraryTree o) {

@@ -41,6 +41,7 @@ public class Book extends TitledEntity {
 	public static final String READ_LABEL = "read";
 
 	public final String File;
+	public final String MimeType;
 
 	private volatile long myId;
 
@@ -59,10 +60,11 @@ public class Book extends TitledEntity {
 //	private static final WeakReference<ZLImage> NULL_IMAGE = new WeakReference<ZLImage>(null);
 //	private WeakReference<ZLImage> myCover;
 
-	Book(long id, String file, String title, String encoding, String language) {
+	Book(long id, String file, String mime, String title, String encoding, String language) {
 		super(title);
 		myId = id;
 		File = file;
+		MimeType = mime;
 		myEncoding = encoding;
 		myLanguage = language;
 		myIsSaved = true;

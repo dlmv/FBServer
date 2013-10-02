@@ -44,6 +44,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 
 	final static String PORT = "server_port";
 	final static String IP = "server_ip";
+	final static String NAME = "server_name";
 
 	final static String ASK_STATE = "ask_state";
 
@@ -54,7 +55,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 	final static int STATE_STOPPED = 4;
 
 	private int myState;
-
+	private String myName = "";
 	private int myPort;
 	private String myError = "";
 	
@@ -64,6 +65,7 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 		public void handleMessage (Message msg) {
 			Intent i = new Intent();
 			i.putExtra(PORT, Integer.toString(myPort));
+			i.putExtra(NAME, myName);
 			if (myServer != null) {
 				i.putExtra(IP, myServer.getIp());
 			}
@@ -137,7 +139,8 @@ public class FBServerService extends Service implements BookCollectionShadow.Lis
 				try {
 					String portStr = intent.getStringExtra(PORT);
 					myPort = Integer.parseInt(portStr);
-					myServer = new OPDSServer(myPort, FBServerService.this, myCollection);
+					myName = intent.getStringExtra(NAME);
+					myServer = new OPDSServer(myPort, myName, FBServerService.this, myCollection);
 				} catch (Exception e) {
 					myError = e.getMessage();
 					myState = STATE_FAILED;

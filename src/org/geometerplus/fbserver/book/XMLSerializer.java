@@ -422,6 +422,7 @@ public class XMLSerializer extends AbstractSerializer {
 
 		private long myId = -1;
 		private String myUrl;
+		private String myMime;
 		private final StringBuilder myTitle = new StringBuilder();
 		private final StringBuilder myLanguage = new StringBuilder();
 		private final StringBuilder myEncoding = new StringBuilder();
@@ -472,6 +473,7 @@ public class XMLSerializer extends AbstractSerializer {
 			myBook = new Book(
 				myId,
 				myUrl,
+				myMime,
 				string(myTitle),
 				string(myEncoding),
 				string(myLanguage)
@@ -536,6 +538,7 @@ public class XMLSerializer extends AbstractSerializer {
 					} else if ("link".equals(localName)) {
 						// TODO: use "rel" attribute
 						myUrl = attributes.getValue("href");
+						myMime = attributes.getValue("type");
 					} else {
 						throw new SAXException("Unexpected tag " + localName);
 					}

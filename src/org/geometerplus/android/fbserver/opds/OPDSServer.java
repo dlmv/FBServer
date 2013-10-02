@@ -34,7 +34,6 @@ import android.content.Context;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import android.content.res.AssetManager;
 
 import nanohttpd.*;
 
@@ -50,6 +49,7 @@ public class OPDSServer extends NanoHTTPD {
 	private static final String ICON_FILE = "fbreader.png";
 
 	private final int myPort;
+	private final String myName;
 
 	private WifiManager.MulticastLock myLock = null;
 	private ArrayList<JmDNS> myJmDNSes = new ArrayList<JmDNS>();
@@ -63,11 +63,12 @@ public class OPDSServer extends NanoHTTPD {
 		myCache.clear();
 	}
 
-	public OPDSServer(int port, Context context, IBookCollection col) throws IOException {
+	public OPDSServer(int port, String name, Context context, IBookCollection col) throws IOException {
 		super(port, Environment.getRootDirectory());
 		myContext = context;
 		myPort = port;
 		myCollection = col;
+		myName = name;
 		//		expose();
 		OPDSCreator.init(context);
 	}
@@ -76,7 +77,7 @@ public class OPDSServer extends NanoHTTPD {
 		return ICON_URL;
 	}
 
-	public void expose(String name) throws IOException {
+	private void expose() throws IOException {
 		final WifiManager wifiManager = (WifiManager)myContext.getSystemService(Context.WIFI_SERVICE);
 		myLock = wifiManager.createMulticastLock("FBServer_lock");
 		myLock.setReferenceCounted(true);
@@ -89,7 +90,7 @@ public class OPDSServer extends NanoHTTPD {
 				myJmDNSes.add(mcDNS);
 				Hashtable<String, String> props = new Hashtable<String, String>();
 				props.put("path", ROOT_URL);
-				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", name, myPort, 0, 0, props);
+				ServiceInfo serviceInfo = ServiceInfo.create("_opds._tcp.local.", myName, myPort, 0, 0, props);
 				mcDNS.registerService(serviceInfo);
 			}
 		}
