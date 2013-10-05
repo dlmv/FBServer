@@ -36,8 +36,8 @@ import org.geometerplus.android.fbreader.api.TextPosition;
 import org.geometerplus.fbserver.book.*;
 
 public class BookCollectionShadow extends AbstractBookCollection implements ServiceConnection {
-	static final String BOOK_EVENT_ACTION = "fbreader.library-service.book-event";
-	static final String BUILD_EVENT_ACTION = "fbreader.library-service.build-event";
+	static final String BOOK_EVENT_ACTION = "fbreader.library_service.book_event";
+	static final String BUILD_EVENT_ACTION = "fbreader.library_service.build_event";
 	static final String INTENT_ACTION = "android.fbreader.action.LIBRARY_SERVICE";
 
 	private Context myContext;
